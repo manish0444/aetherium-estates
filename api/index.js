@@ -14,6 +14,7 @@ import MongoStore from 'connect-mongo';
 import { fileURLToPath } from 'url';
 import mailRouter from './routes/mail.route.js';
 import messageRoute from './routes/message.route.js';
+import './config/passport.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +69,9 @@ app.use(
     }
   })
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use((req, res, next) => {
   if (!req.session) {
