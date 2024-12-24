@@ -1,0 +1,14 @@
+{
+  "name": "mernsite",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "node api/index.js",
+    "build": "cd client && npm install && npm run build",
+    "vercel-build": "cd client && npm install --legacy-peer-deps && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
