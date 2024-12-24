@@ -239,13 +239,25 @@ export const reviewListing = async (req, res, next) => {
 
 export const createListing = async (req, res, next) => {
   try {
+    // Check user's existing listings if they are not an agent
+    if (req.user.role === 'user') {
+      const existingListings = await Listing.countDocuments({ userRef: req.user.id });
+      if (existingListings >= 3) {
+        return res.status(403).json({
+          success: false,
+          message: 'You have reached the maximum limit of 3 listings. Please upgrade to agent to create more listings.'
+        });
+      }
+    }
+
     const listing = await Listing.create({
       ...req.body,
       userRef: req.user.id,
-      status: req.user.role === 'manager' ? 'pending' : 'approved'
+      status: 'approved' // All listings are approved by default
     });
+
     res.status(201).json(listing);
   } catch (error) {
     next(error);
   }
-}; 
+};

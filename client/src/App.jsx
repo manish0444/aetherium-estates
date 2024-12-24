@@ -13,7 +13,7 @@ import SignUp from "./pages/auth/SignUp";
 import About from "./pages/publicPages/About";
 import Profile from "./pages/privatePages/Profile";
 import Header from "./components/Header";
-
+import LandingHeader from "./components/LandingHeader";
 import PrivateRoute from "./components/PrivateRoute";
 import CreateListing from "./pages/privatePages/CreateListing";
 import UpdateListing from "./pages/privatePages/UpdateListing";
@@ -42,6 +42,11 @@ import UserProfilePage from "./pages/publicPages/UserProfilePage";
 import { FavoritesProvider } from './context/FavoritesContext';
 import ReviewListings from "./pages/admin/Pages/ReviewListings";
 import ManagerDashboard from "./pages/manager/Dashboard";
+import LandingPage from "./pages/publicPages/LandingPage";
+import Solutions from "./pages/publicPages/Solutions";
+import Features from "./pages/publicPages/Features";
+import Pricing from "./pages/publicPages/Pricing";
+import VirtualTour from "./pages/publicPages/VirtualTour";
 
 // Admin route wrapper - redirects non-admins to home
 const AdminRoute = ({ children }) => {
@@ -100,9 +105,18 @@ function App() {
     location.pathname
   );
 
+  // Check if current route is a landing page
+  const isLandingPage = [
+    "/about",
+    "/solutions",
+    "/features",
+    "/pricing"
+  ].includes(location.pathname);
+
   return (
     <>
-      {!hideHeader && <Header />}
+      {!hideHeader && !isLandingPage && <Header />}
+      {isLandingPage && <LandingHeader />}
       <FavoritesProvider>
         <Routes>
           {/* Admin routes */}
@@ -203,9 +217,14 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/reset-password/:resetPasswordToken" element={<ResetPassword />} />
 
+          {/* Landing Pages */}
+          <Route path="/about" element={<LandingPage />} />
+          <Route path="/solutions" element={<Solutions />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/pricing" element={<Pricing />} />
+
           {/* Public routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/faq" element={<FAQPage />} />
@@ -215,6 +234,7 @@ function App() {
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/listing/:listingId" element={<Listings />} />
           <Route path="/user-profile/:userId" element={<UserProfilePage />} />
+          <Route path="/virtual-tour/:listingId" element={<VirtualTour />} />
 
           {/* Protected routes */}
           <Route element={<PrivateRoute />}>

@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
-import { app } from "../../firebase";
-import {
   updateUserStart,
   updateUserSuccess,
   updateUserFailure,
@@ -47,6 +40,9 @@ export default function Profile() {
     reviewsCount: 0
   });
   const [listingsLoading, setListingsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 10;
 
   useEffect(() => {
     if (file) {
@@ -82,48 +78,68 @@ export default function Profile() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const storage = getStorage(app);
-    const fileName = new Date().getTime() + file.name;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    try {
+      const base64 = await convertToBase64(file);
+      
+      // Immediately update user with new photo
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ photo: base64 }),
+      });
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setFilePerc(Math.round(progress));
-      },
-      (error) => {
-        setFileUploadError(true);
-        console.error('Upload error:', error);
-      },
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          
-          // Immediately update user with new photo
-          const res = await fetch(`/api/user/update/${currentUser._id}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ photo: downloadURL }),
-          });
-
-          const data = await res.json();
-          
-          if (!res.ok) {
-            throw new Error(data.message);
-          }
-
-          dispatch(updateUserSuccess(data));
-          setFormData(prev => ({ ...prev, photo: downloadURL }));
-        } catch (error) {
-          console.error('Error updating profile photo:', error);
-          setFileUploadError(true);
-        }
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message);
       }
-    );
+
+      dispatch(updateUserSuccess(data));
+      setFormData(prev => ({ ...prev, photo: base64 }));
+    } catch (error) {
+      console.error('Error updating profile photo:', error);
+      setFileUploadError(true);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const base64 = await convertToBase64(file);
+      
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatar: base64 }),
+      });
+
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+
+      dispatch(updateUserSuccess(data));
+      setUpdateSuccess(true);
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+    }
+  };
+
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const handleChange = (e) => {
@@ -179,24 +195,31 @@ export default function Profile() {
     }
   };
 
-  const handleShowListings = async () => {
+  const handleShowListings = async (pageNum = page) => {
     try {
       setListingsLoading(true);
       setShowListingsError(false);
-      const res = await fetch(`/api/user/listings/${currentUser._id}`);
+      const res = await fetch(`/api/user/listings/${currentUser._id}?page=${pageNum}&limit=${pageSize}`);
       const data = await res.json();
       
-      if (!res.ok) {
-        setShowListingsError(true);
-        return;
+      if (pageNum === 1) {
+        setUserListings(data.listings);
+      } else {
+        setUserListings(prev => [...prev, ...data.listings]);
       }
       
-      setUserListings(data);
+      setHasMore(data.listings.length === pageSize);
+      setPage(pageNum);
     } catch (error) {
       setShowListingsError(true);
-      console.error('Error fetching listings:', error);
     } finally {
       setListingsLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!listingsLoading && hasMore) {
+      handleShowListings(page + 1);
     }
   };
 
@@ -471,6 +494,39 @@ export default function Profile() {
           </div>
         )}
       </div>
+      <div className='flex flex-col gap-4'>
+        <input
+          onChange={handleImageUpload}
+          type='file'
+          ref={fileRef}
+          hidden
+          accept='image/*'
+        />
+        <img
+          onClick={() => fileRef.current.click()}
+          src={currentUser.avatar || '/default-avatar.png'}
+          alt='profile'
+          className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2'
+        />
+      </div>
+      {activeTab === 'listings' && (
+        <div className='flex flex-col gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {userListings.map((listing) => (
+              <ListingCard key={listing._id} listing={listing} />
+            ))}
+          </div>
+          {hasMore && (
+            <button
+              onClick={loadMore}
+              disabled={listingsLoading}
+              className='bg-slate-700 text-white rounded-lg p-3 hover:opacity-95 disabled:opacity-80'
+            >
+              {listingsLoading ? 'Loading...' : 'Load More'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
