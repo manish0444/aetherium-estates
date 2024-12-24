@@ -2,7 +2,7 @@ services:
   - type: web
     name: aetherium-estates-api
     env: node
-    buildCommand: npm install
+    buildCommand: npm install --legacy-peer-deps
     startCommand: node index.js
     envVars:
       - key: NODE_ENV
