@@ -1036,36 +1036,17 @@ export default function CreateListing() {
       setLoading(true);
       setError(null);
 
-      // Check listing count for regular users
-      if (currentUser.role !== 'agent' && userListingsCount >= MAX_USER_LISTINGS) {
-        setError(`Free users can only create up to ${MAX_USER_LISTINGS} listings. Please upgrade to agent to create more.`);
-        setLoading(false);
-        return;
-      }
-
-      // Force listing type to be rent
-      formData.listingType = 'rent';
-
-      // If it's not the final step, just validate current step and move forward
+      // If it's not the final step, just move to next step
       if (activeStep < steps.length) {
         if (!validateStep()) {
           setError("Please fill in all required fields for this step");
-          setLoading(false);
           return;
         }
         handleStepChange('next');
-        setLoading(false);
         return;
       }
 
-      // Final submission - validate all required fields
-      if (!formData.name || !formData.description || !formData.address || 
-          !formData.regularPrice || formData.imageUrls.length === 0) {
-        setError("Please fill in all required fields marked with *");
-        setLoading(false);
-        return;
-      }
-
+      // Final submission
       await submitListing();
 
     } catch (error) {
@@ -1075,51 +1056,40 @@ export default function CreateListing() {
     }
   };
 
-  const submitListing = async (isHighValue = false) => {
+  const submitListing = async () => {
     try {
-      // Prepare listing data with all required fields
+      // Simplify the listing data
       const listingData = {
         ...formData,
         userRef: currentUser._id,
-        status: isHighValue ? 'pending' : 'published',
-        type: 'rent', // Always set to rent
-        offer: formData.offer || false,
-        parking: formData.parking || false,
-        furnished: formData.furnished || false,
-        // Ensure these required fields are included
-        name: formData.name,
-        description: formData.description,
-        address: formData.address,
+        status: 'active', // Use 'active' instead of 'published'
+        type: 'rent',
         regularPrice: Number(formData.regularPrice),
         discountPrice: formData.offer ? Number(formData.discountPrice) : 0,
-        imageUrls: formData.imageUrls,
         bedrooms: Number(formData.bedrooms) || 0,
         bathrooms: Number(formData.bathrooms) || 0,
         totalArea: Number(formData.totalArea) || 0,
-        propertyType: formData.propertyType,
-        propertyStatus: formData.propertyStatus,
-        currency: formData.currency,
-        customCurrency: formData.currency === 'custom' ? formData.customCurrency : '',
-        // Location data
+        builtUpArea: Number(formData.builtUpArea) || 0,
+        floorNumber: Number(formData.floorNumber) || 0,
+        totalFloors: Number(formData.totalFloors) || 0,
         latitude: Number(formData.latitude) || 0,
         longitude: Number(formData.longitude) || 0,
-        // Additional fields
         maintenanceFees: Number(formData.maintenanceFees) || 0,
-        deposit: Number(formData.deposit) || 0,
-        paymentFrequency: formData.paymentFrequency,
-        amenities: formData.amenities,
-        features: formData.features
+        deposit: Number(formData.deposit) || 0
       };
 
-      // Validate required fields before submission
-      if (!listingData.name || !listingData.description || !listingData.address || 
-          !listingData.regularPrice || listingData.imageUrls.length === 0) {
-        throw new Error("Please fill in all required fields");
-      }
+      // Check user permissions for regular users
+      if (currentUser.role !== 'admin' && currentUser.role !== 'agent') {
+        // Check listing count
+        if (userListingsCount >= MAX_USER_LISTINGS) {
+          throw new Error(`Free users can only create up to ${MAX_USER_LISTINGS} listings. Please upgrade to agent to create more.`);
+        }
 
-      // If offering a discount, validate discount price
-      if (listingData.offer && (!listingData.discountPrice || listingData.discountPrice >= listingData.regularPrice)) {
-        throw new Error("Discount price must be lower than regular price");
+        // Check price limit
+        const priceInNPR = convertToNPR(listingData.regularPrice, listingData.currency);
+        if (priceInNPR > MAX_USER_PRICE) {
+          throw new Error(`Regular users cannot set price higher than NPR ${MAX_USER_PRICE}. Please upgrade to agent.`);
+        }
       }
 
       const res = await fetch("/api/listing/create", {
@@ -1139,9 +1109,7 @@ export default function CreateListing() {
       setNotification({
         show: true,
         type: 'success',
-        message: isHighValue 
-          ? 'Listing submitted for admin approval' 
-          : 'Listing created successfully'
+        message: 'Listing created successfully'
       });
 
       // Navigate after successful creation

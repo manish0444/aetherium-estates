@@ -103,11 +103,11 @@ const listingSchema = new mongoose.Schema(
       of: Boolean,
       default: {}
     },
-    status: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'approved'
-    }
+   status: {
+    type: String,
+    enum: ['active', 'inactive', 'deleted'],
+    default: 'active'
+  }
   },
   { timestamps: true }
 );

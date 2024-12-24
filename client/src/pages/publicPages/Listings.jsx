@@ -131,8 +131,10 @@ const LandlordInfoModal = ({ listing, onClose }) => {
         if (!res.ok) throw new Error('Failed to fetch landlord info');
         
         const data = await res.json();
-        data.role = data.role?.toLowerCase() || 'user';
-        setLandlordInfo(data);
+        setLandlordInfo({
+          ...data,
+          role: data.role?.toLowerCase() || 'user'
+        });
       } catch (error) {
         console.error('Error fetching landlord info:', error);
         setLandlordInfo(null);
@@ -141,7 +143,9 @@ const LandlordInfoModal = ({ listing, onClose }) => {
       }
     };
 
-    fetchLandlordInfo();
+    if (listing?.userRef) {
+      fetchLandlordInfo();
+    }
   }, [listing.userRef]);
 
   return (
@@ -157,7 +161,7 @@ const LandlordInfoModal = ({ listing, onClose }) => {
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <img
-                    src={landlordInfo.photo || "/default-avatar.png"}
+                    src={landlordInfo.avatar || "/default-avatar.png"}
                     alt={landlordInfo.username}
                     className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-lg"
                   />
