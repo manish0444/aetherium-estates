@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mernsite-api
+    name: aetherium-estates-api
     env: node
     buildCommand: npm install
     startCommand: node index.js

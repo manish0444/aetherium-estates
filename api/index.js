@@ -43,7 +43,7 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://your-frontend-domain.vercel.app'],
+  origin: ['http://localhost:5173', 'https://aetherium-estates.vercel.app'],
   credentials: true,
 }));
 
