@@ -41,12 +41,14 @@ mongoose
 
 const app = express();
 
+// CORS configuration
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://your-frontend-domain.vercel.app'],
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
 
 app.use(
   session({
@@ -76,13 +78,28 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api/user", userRouter);
-app.use("/api/auth", authRouter);
-app.use("/api/listing", listingRouter);
-app.use("/api/favorite", favoriteRouter);
-app.use("/api/blog", BlogRouter);
+// API routes
+app.use('/api/user', userRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/listing', listingRouter);
+app.use('/api/favorites', favoriteRouter);
+app.use('/api/blog', BlogRouter);
 app.use('/api/mail', mailRouter);
 app.use('/api/message', messageRoute);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'API is running' });
+});
+
+// Error handling for undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    message: 'API endpoint not found'
+  });
+});
 
 app.use(express.static(path.join(__dirname, "/client/dist")));
 
