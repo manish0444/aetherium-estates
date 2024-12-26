@@ -123,8 +123,37 @@ export const getAllUsers = async (req, res, next) => {
   // ... existing code
 };
 
-export const getUserListingsCount = async (req, res, next) => {
-  // ... existing code
+const MAX_USER_LISTINGS = 3;
+
+export const getUserListingsCount = async (req, res) => {
+  try {
+    // Get all listings ever created by the user (including deleted)
+    const allListings = await Listing.find({
+      userRef: req.params.id,
+    });
+
+    // Count total listings (including deleted)
+    const totalListingsEverCreated = allListings.length;
+
+    // Count active listings
+    const activeListings = allListings.filter(listing => !listing.deleted).length;
+
+    // Calculate remaining listings
+    const remainingListings = Math.max(0, MAX_USER_LISTINGS - totalListingsEverCreated);
+
+    // Check if user has reached limit
+    const hasReachedLimit = totalListingsEverCreated >= MAX_USER_LISTINGS;
+
+    res.json({ 
+      success: true, 
+      totalCount: totalListingsEverCreated,
+      activeCount: activeListings,
+      remainingListings,
+      hasReachedLimit
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 export const getAgents = async (req, res, next) => {

@@ -10,11 +10,12 @@ import {
 } from "../controller/listing.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 import Listing from "../models/listing.model.js";
+import { checkListingLimits } from '../middleware/checkListingLimits.js';
 
 const router = express.Router();
 
 // Basic listing routes
-router.post("/create", verifyToken(["user", "admin", "manager"]), createListing);
+router.post("/create", verifyToken(), checkListingLimits, createListing);
 router.delete("/delete/:id", verifyToken(["user", "admin"]), deleteListing);
 router.post("/update/:id", verifyToken(["user", "admin"]), updateListing);
 router.get("/get/:id", getListing);

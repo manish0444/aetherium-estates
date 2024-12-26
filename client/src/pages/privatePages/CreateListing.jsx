@@ -846,36 +846,137 @@ const ReviewSubmitForm = ({ formData }) => {
   );
 };
 
-const UserRestrictionNotice = ({ listingsCount }) => {
-  const remainingListings = MAX_USER_LISTINGS - listingsCount;
-  const isLimitReached = listingsCount >= MAX_USER_LISTINGS;
-
+const UserRestrictionNotice = ({ listingsCount, remainingListings, hasReachedLimit }) => {
   return (
     <div className={`${
-      isLimitReached ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-    } p-4 rounded-lg mb-6`}>
-      <div className="flex items-center gap-2 mb-2">
-        <Info className="w-5 h-5" />
-        <h3 className="font-semibold">
-          {isLimitReached ? 'Listing Limit Reached' : 'Free User Restrictions'}
-        </h3>
+      hasReachedLimit ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'
+    } border rounded-xl p-6 mb-6 relative overflow-hidden`}>
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-4">
+          <Info className={`w-5 h-5 ${hasReachedLimit ? 'text-red-500' : 'text-blue-500'}`} />
+          <h3 className={`font-semibold ${hasReachedLimit ? 'text-red-700' : 'text-blue-700'}`}>
+            {hasReachedLimit ? 'Listing Limit Reached' : 'Free User Restrictions'}
+          </h3>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Total Listings Created</span>
+              <span className="font-semibold">{listingsCount} of {MAX_USER_LISTINGS}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  hasReachedLimit ? 'bg-red-500' : 'bg-blue-500'
+                }`}
+                style={{ width: `${(listingsCount / MAX_USER_LISTINGS) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {hasReachedLimit ? (
+            <div className="text-center">
+              <p className="text-red-600 mb-4">
+                You've reached the maximum limit of {MAX_USER_LISTINGS} listings (including deleted ones).
+              </p>
+              <button
+                onClick={() => {/* Add upgrade handler */}}
+                className="relative px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold 
+                           hover:from-purple-700 hover:to-blue-700 transform hover:-translate-y-0.5 transition-all duration-200
+                           animate-shimmer overflow-hidden"
+              >
+                <span className="relative z-10">Upgrade to Pro</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                              animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+              </button>
+            </div>
+          ) : (
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                {remainingListings} listings remaining (deleted listings count towards limit)
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                Maximum price limit: NPR {MAX_USER_PRICE.toLocaleString()}
+              </li>
+            </ul>
+          )}
+        </div>
       </div>
-      <ul className="list-disc list-inside space-y-1 text-sm">
-        {isLimitReached ? (
-          <li>You have reached the maximum limit of {MAX_USER_LISTINGS} listings. Please upgrade to agent to create more listings.</li>
-        ) : (
-          <>
-            <li>{remainingListings} listings remaining out of {MAX_USER_LISTINGS}</li>
-            <li>Maximum price limit: NPR {MAX_USER_PRICE.toLocaleString()}</li>
-          </>
-        )}
-      </ul>
+      
+      <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-gradient-to-br from-current to-transparent opacity-10 rounded-full" />
     </div>
   );
 };
 
 const MAX_USER_LISTINGS = 3;
 const MAX_USER_PRICE = 15000;
+
+// Add this component for mobile steps
+const MobileSteps = ({ steps, activeStep }) => {
+  return (
+    <div className="lg:hidden mb-6">
+      <div className="flex items-center justify-between px-4">
+        <span className="text-sm text-gray-500">Step {activeStep} of {steps.length}</span>
+        <span className="font-medium">{steps[activeStep - 1].title}</span>
+      </div>
+      <div className="mt-2 px-4">
+        <div className="h-2 bg-gray-200 rounded-full">
+          <div 
+            className="h-2 bg-blue-600 rounded-full transition-all duration-300"
+            style={{ width: `${((activeStep) / steps.length) * 100}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add this component for desktop progress steps
+const DesktopProgressSteps = ({ steps, activeStep }) => {
+  return (
+    <div className="hidden lg:block mb-8 px-4">
+      <div className="relative">
+        {/* Progress Bar Background */}
+        <div className="absolute top-1/2 transform -translate-y-1/2 h-1 w-full bg-gray-200 rounded-full" />
+        
+        {/* Active Progress Bar */}
+        <div 
+          className="absolute top-1/2 transform -translate-y-1/2 h-1 bg-blue-600 rounded-full transition-all duration-300"
+          style={{ width: `${((activeStep - 1) / (steps.length - 1)) * 100}%` }}
+        />
+
+        {/* Steps */}
+        <div className="relative flex justify-between">
+          {steps.map((step) => (
+            <div key={step.number} className="flex flex-col items-center">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  activeStep >= step.number
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border-2 border-gray-300 text-gray-400'
+                }`}
+              >
+                {activeStep > step.number ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <span className="text-sm">{step.number}</span>
+                )}
+              </div>
+              <span className={`mt-2 text-sm font-medium transition-colors duration-300 ${
+                activeStep >= step.number ? 'text-blue-600' : 'text-gray-500'
+              }`}>
+                {step.title}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function CreateListing() {
   const { currentUser } = useSelector((state) => state.user);
@@ -889,6 +990,8 @@ export default function CreateListing() {
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [imageUploadError, setImageUploadError] = useState(null);
   const [userListingsCount, setUserListingsCount] = useState(0);
+  const [remainingListings, setRemainingListings] = useState(MAX_USER_LISTINGS);
+  const [hasReachedLimit, setHasReachedLimit] = useState(false);
 
   const [formData, setFormData] = useState({
     // Required fields
@@ -970,18 +1073,25 @@ export default function CreateListing() {
   ];
 
   useEffect(() => {
-    const fetchListingsCount = async () => {
+    const fetchUserListingsCount = async () => {
+      if (!currentUser?._id) return;
+      
       try {
         const res = await fetch(`/api/user/listings/count/${currentUser._id}`);
         const data = await res.json();
-        setUserListingsCount(data.count);
+        
+        if (res.ok) {
+          setUserListingsCount(data.totalCount || 0);
+          setRemainingListings(data.remainingListings || 0);
+          setHasReachedLimit(data.hasReachedLimit || false);
+        }
       } catch (error) {
         console.error('Error fetching listings count:', error);
       }
     };
 
-    fetchListingsCount();
-  }, [currentUser._id]);
+    fetchUserListingsCount();
+  }, [currentUser?._id]);
 
   const handleChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -1035,6 +1145,12 @@ export default function CreateListing() {
     try {
       setLoading(true);
       setError(null);
+
+      // Check if user has reached limit
+      if (currentUser.role !== 'agent' && hasReachedLimit) {
+        setError('You have reached the maximum limit of listings. Please upgrade to agent to create more.');
+        return;
+      }
 
       // If it's not the final step, just move to next step
       if (activeStep < steps.length) {
@@ -1244,57 +1360,36 @@ export default function CreateListing() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-6xl mx-auto px-4">
         {currentUser.role !== 'agent' && (
-          <UserRestrictionNotice listingsCount={userListingsCount} />
+          <UserRestrictionNotice 
+            listingsCount={userListingsCount}
+            remainingListings={remainingListings}
+            hasReachedLimit={hasReachedLimit}
+          />
         )}
         
-        {/* Disable all form elements if limit is reached */}
-        <div className={userListingsCount >= MAX_USER_LISTINGS && currentUser.role !== 'agent' ? 'opacity-50 pointer-events-none' : ''}>
-          {/* Progress Steps */}
-          <div className="mb-8 px-4">
-            <div className="relative">
-              {/* Progress Bar Background */}
-              <div className="absolute top-1/2 transform -translate-y-1/2 h-1 w-full bg-gray-200 rounded-full" />
-              
-              {/* Active Progress Bar */}
-              <div 
-                className="absolute top-1/2 transform -translate-y-1/2 h-1 bg-blue-600 rounded-full transition-all duration-300"
-                style={{ width: `${((activeStep - 1) / (steps.length - 1)) * 100}%` }}
-              />
+        {/* Disable form if limit reached */}
+        <div className={`${hasReachedLimit ? 'opacity-50 pointer-events-none filter blur-[1px]' : ''}`}>
+          {/* Desktop Progress Steps - Hide on mobile */}
+          <DesktopProgressSteps steps={steps} activeStep={activeStep} />
 
-              {/* Steps */}
-              <div className="relative flex justify-between">
-              {steps.map((step) => (
-                  <div key={step.number} className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                      activeStep >= step.number
-                        ? 'bg-blue-600 text-white'
-                          : 'bg-white border-2 border-gray-300 text-gray-400'
-                    }`}
-                  >
-                    {activeStep > step.number ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                        <span className="text-sm">{step.number}</span>
-                    )}
-                  </div>
-                    <span className={`mt-2 text-xs sm:text-sm font-medium transition-colors duration-300 ${
-                      activeStep >= step.number ? 'text-blue-600' : 'text-gray-500'
-                    }`}>
-                      {step.title}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* Mobile Progress Steps */}
+          <MobileSteps steps={steps} activeStep={activeStep} />
 
           {/* Form Content */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="bg-white rounded-xl shadow-lg">
+            <form onSubmit={handleSubmit} className="divide-y divide-gray-200">
+              {/* Mobile Step Title */}
+              <div className="p-4 lg:hidden">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {steps[activeStep - 1].title}
+                </h2>
+          </div>
+
+              {/* Form Fields */}
+              <div className="p-4 sm:p-6 space-y-6">
               {activeStep === 1 && (
                 <BasicInformationForm formData={formData} handleChange={handleChange} />
               )}
@@ -1318,46 +1413,40 @@ export default function CreateListing() {
               {activeStep === 5 && (
                 <ReviewSubmitForm formData={formData} />
               )}
-
-              {/* Error Message */}
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-                  {error}
                 </div>
-              )}
 
-              {/* Navigation Buttons */}
-              <div className="flex justify-between pt-6">
+              {/* Navigation Buttons - Make sticky on mobile */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-3">
                 {activeStep > 1 && (
                   <button
                     type="button"
                     onClick={() => handleStepChange('prev')}
-                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
                   >
-                    Previous
+                    Back
                   </button>
                 )}
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-6 py-2 rounded-lg text-white ${
+                  className={`flex-1 px-4 py-3 rounded-lg text-white text-sm font-medium ${
                     activeStep === steps.length
                       ? 'bg-green-600 hover:bg-green-700'
                       : 'bg-blue-600 hover:bg-blue-700'
                   } disabled:opacity-50`}
                 >
                   {loading ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
                       Processing...
                     </span>
                   ) : activeStep === steps.length ? (
                     'Submit Listing'
                   ) : (
-                    'Next'
+                    'Continue'
                   )}
                 </button>
               </div>

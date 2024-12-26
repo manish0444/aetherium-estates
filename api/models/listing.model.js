@@ -103,11 +103,15 @@ const listingSchema = new mongoose.Schema(
       of: Boolean,
       default: {}
     },
-   status: {
-    type: String,
-    enum: ['active', 'inactive', 'deleted'],
-    default: 'active'
-  }
+    deleted: {
+      type: Boolean,
+      default: false
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive', 'deleted'],
+      default: 'active'
+    }
   },
   { timestamps: true }
 );
