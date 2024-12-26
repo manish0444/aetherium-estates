@@ -699,23 +699,26 @@ export default function Listing() {
   }, [params.listingId]);
 
   return (
-    <main className="min-h-screen bg-gray-50 py-4 sm:py-8">
+    <main className="min-h-screen bg-gray-50">
       {loading ? (
         <div className="flex justify-center items-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       ) : error ? (
-        <div className="text-center text-red-500">{error}</div>
+        <div className="text-center text-red-500 p-4">{error}</div>
       ) : listing ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6 order-2 lg:order-1">
-              <div className="relative">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
+              <div className="relative bg-gray-100 rounded-xl overflow-hidden">
                 <Swiper
                   navigation
                   effect="fade"
-                  className="rounded-xl overflow-hidden"
-                  style={{ height: "300px", minHeight: "300px" }}
+                  className="rounded-xl listing-swiper"
+                  style={{
+                    height: "min(60vh, 500px)",
+                    minHeight: "300px",
+                  }}
                 >
                   {listing.imageUrls.map((url) => (
                     <SwiperSlide key={url}>
@@ -1085,8 +1088,8 @@ export default function Listing() {
               </div>
             </div>
 
-            <div className="h-[300px] lg:h-[calc(100vh-2rem)] order-1 lg:order-2 lg:sticky lg:top-8">
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 h-full">
+            <div className="h-[300px] lg:h-[calc(100vh-4rem)] order-1 lg:order-2 lg:sticky lg:top-4">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-full">
                 <div className="mb-4 relative">
                   <div className="relative">
                     <input
@@ -1130,7 +1133,7 @@ export default function Listing() {
                 </div>
 
                 <MapContainer
-                  className="h-full w-full rounded-lg"
+                  className="h-full w-full rounded-lg listing-map"
                   center={[listing.latitude, listing.longitude]}
                   zoom={15}
                   scrollWheelZoom={false}

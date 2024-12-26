@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 import EnhancedPropertyListing from "../../components/EnhancedPropertyListing";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -457,9 +457,13 @@ export default function Search() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {listings.map((listing) => (
-            <div key={listing._id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <Link 
+              to={`/listing/${listing._id}`} 
+              key={listing._id}
+              className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
+            >
               <div className="relative pb-[75%]">
                 <img
                   src={listing.imageUrls[0]}
@@ -472,14 +476,15 @@ export default function Search() {
                 <p className="text-gray-500 text-xs sm:text-sm truncate">{listing.address}</p>
                 <p className="mt-2 font-bold text-sm sm:text-base">
                   ${listing.regularPrice.toLocaleString()}
+                  {listing.type === 'rent' && ' /month'}
                 </p>
-                <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm">
+                <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm text-gray-600">
                   <span>{listing.bedrooms} beds</span>
                   <span>•</span>
                   <span>{listing.bathrooms} baths</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
