@@ -1077,7 +1077,6 @@ export default function CreateListing() {
       if (!currentUser?._id) return;
       
       try {
-        // Use the correct endpoint path
         const res = await fetch(`/api/user/listings/count/${currentUser._id}`);
         const data = await res.json();
         

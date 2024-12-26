@@ -233,7 +233,7 @@ const LandlordInfoModal = ({ listing, onClose }) => {
               </button>
             </div>
           ) : (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center py-8 text-gray-500">
               Failed to load landlord information
             </div>
           )}
@@ -707,16 +707,47 @@ export default function Listing() {
       ) : error ? (
         <div className="text-center text-red-500 p-4">{error}</div>
       ) : listing ? (
-        <div className="max-w-7xl mx-auto px-2 py-2 sm:px-6 sm:py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
-            <div className="space-y-3 sm:space-y-6 order-2 lg:order-1">
-              <div className="relative bg-gray-100 rounded-lg sm:rounded-xl overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
+          {/* Mobile View Header - Only visible on mobile */}
+          <div className="lg:hidden mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {listing.name}
+            </h1>
+            <div className="flex items-center gap-2 mb-3 text-slate-600">
+              <MapPin className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm truncate" title={listing.address}>
+                {formatAddress(listing.address)}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-base font-semibold bg-slate-100 text-slate-900">
+                {listing.currency === 'custom' ? listing.customCurrency :
+                 listing.currency === 'NPR' ? 'Rs.' :
+                 listing.currency === 'USD' ? '$' : '₹'}
+                {listing.offer
+                  ? (listing.regularPrice - listing.discountPrice).toLocaleString()
+                  : listing.regularPrice.toLocaleString()}
+                {listing.type === "rent" && " / month"}
+              </span>
+              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                For {listing.type === "rent" 
+                  ? "Rent" 
+                  : listing.type === "lease" 
+                  ? "Lease" 
+                  : "Sale"}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
+              <div className="relative bg-gray-100 rounded-xl overflow-hidden">
                 <Swiper
                   navigation
                   effect="fade"
-                  className="rounded-lg sm:rounded-xl listing-swiper"
+                  className="rounded-xl listing-swiper"
                   style={{
-                    height: "min(50vh, 500px)",
+                    height: "min(50vh, 400px)",
                     minHeight: "250px",
                   }}
                 >
@@ -733,9 +764,11 @@ export default function Listing() {
                     </SwiperSlide>
                   ))}
                 </Swiper>
-                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-20 flex items-center gap-2">
+
+                {/* Action buttons container with improved mobile layout */}
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-2 flex-wrap">
                   <button
-                    className={`p-2 sm:p-3 rounded-full backdrop-blur-sm transition-all duration-300 group ${
+                    className={`p-3 rounded-full backdrop-blur-sm transition-all duration-300 group ${
                       favoritesContextIsFavorite(listing._id)
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : "bg-white/90 text-slate-700 hover:bg-white/75"
@@ -743,7 +776,7 @@ export default function Listing() {
                     onClick={handleFavoriteClick}
                   >
                     <Heart
-                      className={`h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform ${
+                      className={`h-4 w-4 group-hover:scale-110 transition-transform ${
                         favoritesContextIsFavorite(listing._id) ? "fill-current" : ""
                       }`}
                     />
@@ -755,14 +788,16 @@ export default function Listing() {
                         e.preventDefault();
                         navigate('/favorites');
                       }}
-                      className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/90 backdrop-blur-sm rounded-full text-xs sm:text-sm font-medium text-slate-700 hover:bg-white/75 transition-all duration-300"
+                      className="px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-slate-700 hover:bg-white/75 transition-all duration-300"
                     >
-                      See your favorites
+                      View Favorites
                     </button>
                   )}
                 </div>
+
+                {/* Share button with mobile optimization */}
                 <button
-                  className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20 p-2 sm:p-3 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white/75 transition-all duration-300 group"
+                  className="absolute top-4 left-4 z-20 p-3 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white/75 transition-all duration-300 group"
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
                     setCopied(true);
@@ -771,40 +806,33 @@ export default function Listing() {
                     }, 2000);
                   }}
                 >
-                  <Share2 className="h-3 w-3 sm:h-4 sm:w-4 text-slate-700 group-hover:scale-110 transition-transform" />
+                  <Share2 className="h-4 w-4 text-slate-700 group-hover:scale-110 transition-transform" />
                 </button>
 
-                <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 z-20">
-                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg shadow-lg flex items-center gap-2">
-                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
-                    <span className="text-xs sm:text-sm font-medium">{viewCount} views</span>
+                <div className="absolute bottom-4 left-4 z-20">
+                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-slate-600" />
+                    <span className="text-sm font-medium">{viewCount} views</span>
                   </div>
                 </div>
-
-                {copied && (
-                  <div className="absolute top-12 sm:top-16 right-2 sm:right-4 z-10">
-                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg shadow-lg">
-                      <p className="text-xs sm:text-sm">Link copied!</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              <div className="space-y-4 sm:space-y-6">
+              {/* Desktop-only header */}
+              <div className="hidden lg:block space-y-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  <h1 className="text-3xl font-bold text-gray-900">
                     {listing.name}
                   </h1>
-                  <div className="flex items-center gap-2 mt-1.5 sm:mt-2 text-slate-600">
-                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
-                    <span className="text-xs sm:text-sm truncate" title={listing.address}>
+                  <div className="flex items-center gap-2 mt-2 text-slate-600">
+                    <MapPin className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm truncate" title={listing.address}>
                       {formatAddress(listing.address)}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 sm:gap-3">
-                  <span className="inline-flex items-center px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-base sm:text-lg font-semibold bg-slate-100 text-slate-900">
+                <div className="flex flex-wrap gap-3">
+                  <span className="inline-flex items-center px-6 py-2 rounded-full text-lg font-semibold bg-slate-100 text-slate-900">
                     {listing.currency === 'custom' ? listing.customCurrency :
                      listing.currency === 'NPR' ? 'Rs.' :
                      listing.currency === 'USD' ? '$' : '₹'}
@@ -813,7 +841,7 @@ export default function Listing() {
                       : listing.regularPrice.toLocaleString()}
                     {listing.type === "rent" && " / month"}
                   </span>
-                  <span className="inline-flex items-center px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-sm sm:text-base font-semibold bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-6 py-2 rounded-full font-semibold bg-blue-100 text-blue-800">
                     For {listing.type === "rent" 
                       ? "Rent" 
                       : listing.type === "lease" 
@@ -821,369 +849,242 @@ export default function Listing() {
                       : "Sale"}
                   </span>
                 </div>
+              </div>
 
-                <div className="space-y-4 sm:space-y-6">
-                  {/* Description Section */}
-                  <div className="bg-white rounded-lg sm:rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Description</h2>
-                    <p className="text-sm sm:text-base text-gray-600 leading-relaxed whitespace-pre-line">
-                      {listing.description}
-                    </p>
-                  </div>
-
-                  {/* Property Details Section */}
-                  <div className="bg-white rounded-lg sm:rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Property Details</h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 sm:gap-6">
-                      {/* Property Type */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <Home className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Property Type</p>
-                          <p className="text-sm sm:text-base font-semibold capitalize">
-                            {listing.propertyType} {listing.type === 'rent' 
-                              ? 'for Rent' 
-                              : listing.type === 'lease' 
-                              ? 'for Lease' 
-                              : 'for Sale'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Bedrooms */}
-                      {listing.bedrooms > 0 && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                            <Bed className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm text-slate-600">Bedrooms</p>
-                            <p className="text-sm sm:text-base font-semibold">{listing.bedrooms}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Bathrooms */}
-                      {listing.bathrooms > 0 && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                            <Bath className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm text-slate-600">Bathrooms</p>
-                            <p className="text-sm sm:text-base font-semibold">{listing.bathrooms}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Total Area */}
-                      {listing.totalArea > 0 && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                            <Maximize2 className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm text-slate-600">Total Area</p>
-                            <p className="text-sm sm:text-base font-semibold">{listing.totalArea} sq ft</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Built-up Area */}
-                      {listing.builtUpArea > 0 && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                            <Grid className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm text-slate-600">Built-up Area</p>
-                            <p className="text-sm sm:text-base font-semibold">{listing.builtUpArea} sq ft</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Floor Number */}
-                      {listing.floorNumber && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                            <ArrowUpDown className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm text-slate-600">Floor Number</p>
-                            <p className="text-sm sm:text-base font-semibold">{listing.floorNumber}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Total Floors */}
-                      {listing.totalFloors && (
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                            <Building2 className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm text-slate-600">Total Floors</p>
-                            <p className="text-sm sm:text-base font-semibold">{listing.totalFloors}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Parking */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <Car className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Parking</p>
-                          <p className="text-sm sm:text-base font-semibold">{listing.parking ? 'Available' : 'Not Available'}</p>
-                        </div>
-                      </div>
+              {/* Mobile-optimized sections */}
+              <div className="space-y-4 sm:space-y-6">
+                {/* Quick Info Section - Mobile Only */}
+                <div className="lg:hidden grid grid-cols-2 gap-3 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                  {listing.bedrooms > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Bed className="h-5 w-5 text-slate-600" />
+                      <span className="text-sm">{listing.bedrooms} Beds</span>
                     </div>
-                  </div>
-
-                  {/* Financial Details Section */}
-                  <div className="bg-white rounded-lg sm:rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Financial Details</h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 sm:gap-6">
-                      {/* Regular Price */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Regular Price</p>
-                          <p className="text-sm sm:text-base font-semibold">
-                            {listing.currency === 'custom' ? listing.customCurrency :
-                             listing.currency === 'NPR' ? 'Rs.' :
-                             listing.currency === 'USD' ? '$' : '₹'}
-                            {listing.regularPrice.toLocaleString()}
-                            {listing.type === 'rent' && '/month'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Maintenance Fee */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <Wrench className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Maintenance Fee</p>
-                          <p className="text-sm sm:text-base font-semibold">
-                            {listing.maintenanceFees > 0 ? (
-                              <>
-                                {listing.currency === 'custom' ? listing.customCurrency :
-                                 listing.currency === 'NPR' ? 'Rs.' :
-                                 listing.currency === 'USD' ? '$' : '₹'}
-                                {listing.maintenanceFees.toLocaleString()}
-                              </>
-                            ) : 'Not Specified'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Security Deposit */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Security Deposit</p>
-                          <p className="text-sm sm:text-base font-semibold">
-                            {listing.deposit > 0 ? (
-                              <>
-                                {listing.currency === 'custom' ? listing.customCurrency :
-                                 listing.currency === 'NPR' ? 'Rs.' :
-                                 listing.currency === 'USD' ? '$' : '₹'}
-                                {listing.deposit.toLocaleString()}
-                              </>
-                            ) : 'Not Specified'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Payment Frequency */}
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <Calendar className="h-4 w-4 sm:h-6 sm:w-6 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Payment Frequency</p>
-                          <p className="text-sm sm:text-base font-semibold capitalize">
-                            {listing.paymentFrequency || 'Monthly'}
-                          </p>
-                        </div>
-                      </div>
+                  )}
+                  {listing.bathrooms > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Bath className="h-5 w-5 text-slate-600" />
+                      <span className="text-sm">{listing.bathrooms} Baths</span>
                     </div>
-                  </div>
-
-                  {/* Amenities Section */}
-                  {listing.amenities && Object.values(listing.amenities).some(value => value) && (
-                    <div className="bg-white rounded-lg sm:rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Amenities</h2>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                        {Object.entries(listing.amenities)
-                          .filter(([_, value]) => value)
-                          .map(([key]) => (
-                            <div key={key} className="flex items-center gap-2">
-                              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                              <span className="text-xs sm:text-sm text-gray-600 capitalize">
-                                {key.replace(/([A-Z])/g, ' $1').trim()}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
+                  )}
+                  {listing.totalArea > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Maximize2 className="h-5 w-5 text-slate-600" />
+                      <span className="text-sm">{listing.totalArea} sq ft</span>
+                    </div>
+                  )}
+                  {listing.parking && (
+                    <div className="flex items-center gap-2">
+                      <Car className="h-5 w-5 text-slate-600" />
+                      <span className="text-sm">Parking</span>
                     </div>
                   )}
                 </div>
 
-                {/* Special Offer Section */}
-                {listing.offer && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
-                    <Info className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 mt-0.5" />
-                    <div>
-                      <h3 className="text-sm sm:text-base text-emerald-800 font-semibold">
-                        Special Offer!
-                      </h3>
-                      <p className="text-xs sm:text-sm text-emerald-700 mt-1">
-                        {listing.currency === 'custom' ? listing.customCurrency :
-                         listing.currency === 'NPR' ? 'Rs.' :
-                         listing.currency === 'USD' ? '$' : '₹'}
-                        {listing.discountPrice.toLocaleString()} discount on regular price
-                      </p>
+                {/* Description Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Description</h2>
+                  <p className="text-gray-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                    {listing.description}
+                  </p>
+                </div>
+
+                {/* Property Details Section */}
+                {renderPropertyDetails()}
+
+                {/* Amenities Section */}
+                {renderAmenities()}
+
+                {/* Financial Details Section - Mobile Optimized */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Financial Details</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Regular Price */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
+                        <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-slate-600">Regular Price</p>
+                        <p className="text-sm sm:text-base font-semibold">
+                          {listing.currency === 'custom' ? listing.customCurrency :
+                           listing.currency === 'NPR' ? 'Rs.' :
+                           listing.currency === 'USD' ? '$' : '₹'}
+                          {listing.regularPrice.toLocaleString()}
+                          {listing.type === 'rent' && '/month'}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Maintenance Fee */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
+                        <Wrench className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-slate-600">Maintenance Fee</p>
+                        <p className="text-sm sm:text-base font-semibold">
+                          {listing.maintenanceFees > 0 ? (
+                            <>
+                              {listing.currency === 'custom' ? listing.customCurrency :
+                               listing.currency === 'NPR' ? 'Rs.' :
+                               listing.currency === 'USD' ? '$' : '₹'}
+                              {listing.maintenanceFees.toLocaleString()}
+                            </>
+                          ) : 'Not Specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Security Deposit */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
+                        <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm text-slate-600">Security Deposit</p>
+                        <p className="text-sm sm:text-base font-semibold">
+                          {listing.deposit > 0 ? (
+                            <>
+                              {listing.currency === 'custom' ? listing.customCurrency :
+                               listing.currency === 'NPR' ? 'Rs.' :
+                               listing.currency === 'USD' ? '$' : '₹'}
+                              {listing.deposit.toLocaleString()}
+                            </>
+                          ) : 'Not Specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Minimum Lease Term */}
+                    {listing.type === 'rent' && (
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
+                          <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm text-slate-600">Minimum Lease Term</p>
+                          <p className="text-sm sm:text-base font-semibold">
+                            {listing.minLeaseTerm || 'Not Specified'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <button
-              onClick={() =>
-                currentUser
-                  ? setShowLandlordModal(true)
-                  : handleNonLoggedUserClick("profile")
-              }
-              className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
-            >
-              <User className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="text-sm sm:text-base">View Landlord Info</span>
-            </button>
 
-            <button
-              onClick={() =>
-                currentUser
-                  ? setShowContactModal(true)
-                  : handleNonLoggedUserClick("contact")
-              }
-              className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
-            >
-              <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="text-sm sm:text-base">Contact Landlord</span>
-            </button>
-          </div>
-
-          {showContactModal && (
-            <Contact 
-              listing={listing} 
-              onClose={() => setShowContactModal(false)} 
-            />
-          )}
-          <div className="h-[250px] sm:h-[300px] lg:h-[calc(100vh-4rem)] order-1 lg:order-2 lg:sticky lg:top-4">
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 h-full">
-              <div className="mb-3 sm:mb-4 relative">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search location in Nepal..."
-                    className="w-full px-3 sm:px-4 py-2 pl-9 sm:pl-10 text-sm sm:text-base rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <MapPin className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                  {isSearching && (
-                    <div className="absolute right-2.5 sm:right-3 top-1/2 transform -translate-y-1/2">
-                      <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-blue-500 border-t-transparent"></div>
-                    </div>
-                  )}
-                </div>
-
-                {searchResults.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg max-h-48 sm:max-h-60 overflow-y-auto">
-                    {searchResults.map((result, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleLocationSelect(result)}
-                        className="w-full text-left px-3 sm:px-4 py-2 hover:bg-blue-50 focus:outline-none focus:bg-blue-50 transition-colors duration-150"
-                      >
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="font-medium text-gray-900 text-sm sm:text-base">
-                              {result.display_name.split(',')[0]}
-                            </p>
-                            <p className="text-xs sm:text-sm text-gray-500 truncate">
-                              {result.display_name.split(',').slice(1).join(',')}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <MapContainer
-                className="h-full w-full rounded-lg listing-map"
-                center={[listing.latitude, listing.longitude]}
-                zoom={15}
-                scrollWheelZoom={false}
-                dragging={true}
-                doubleClickZoom={true}
-                zoomControl={false}
-                whenCreated={setMap}
-              >
-                <ZoomControl position="bottomright" />
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <MapClickHandler />
-                <Marker position={[listing.latitude, listing.longitude]} icon={customMarkerIcon}>
-                  <Popup>
-                    <div className="text-center">
-                      <img 
-                        src={listing.imageUrls[0]} 
-                        alt={listing.name}
-                        className="w-24 sm:w-32 h-20 sm:h-24 object-cover rounded mb-1.5 sm:mb-2"
+            {/* Contact Section - Mobile Optimized */}
+            <div className="order-1 lg:order-2">
+              <div className="sticky top-4 space-y-4 sm:space-y-6">
+                {/* Contact Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex-shrink-0">
+                      <img
+                        src={listing.userAvatar || "/default-avatar.png"}
+                        alt="Landlord"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover"
                       />
-                      <p className="font-medium text-sm sm:text-base">{listing.name}</p>
-                      <p className="text-xs sm:text-sm text-gray-500 truncate">
-                        {formatAddress(listing.address)}
-                      </p>
                     </div>
-                  </Popup>
-                </Marker>
-              </MapContainer>
+                    <div className="flex-grow min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        {listing.userName || "Landlord"}
+                      </h3>
+                      <p className="text-sm text-gray-500">Property Owner</p>
+                    </div>
+                    <button
+                      onClick={() => setShowLandlordModal(true)}
+                      className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <Info className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+
+                  {/* Contact Buttons */}
+                  <div className="space-y-3">
+                    {currentUser ? (
+                      <>
+                        <button
+                          onClick={() => setShowContactModal(true)}
+                          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                          Contact Landlord
+                        </button>
+                        <button
+                          onClick={() => setShowLandlordModal(true)}
+                          className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
+                        >
+                          View Landlord Info
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleNonLoggedUserClick('contact')}
+                          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                        >
+                          Contact Landlord
+                        </button>
+                        <button
+                          onClick={() => handleNonLoggedUserClick('info')}
+                          className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
+                        >
+                          View Landlord Info
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Map Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Location</h2>
+                    <div className="relative h-[300px] sm:h-[400px]">
+                      <MapContainer
+                        center={coordinates}
+                        zoom={15}
+                        scrollWheelZoom={false}
+                        className="h-full w-full rounded-lg"
+                      >
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <Marker position={coordinates} icon={customMarkerIcon}>
+                          <Popup>{listing.address}</Popup>
+                        </Marker>
+                        <ZoomControl position="bottomright" />
+                        <MapClickHandler />
+                      </MapContainer>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          {showAlert && (
-            <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out animate-fade-in">
-              <p className="text-sm sm:text-base">{alertText}</p>
-            </div>
-          )}
-
-          {showLandlordModal && (
-            <LandlordInfoModal
-              listing={listing}
-              onClose={() => setShowLandlordModal(false)}
-            />
-          )}
         </div>
       ) : null}
+
+      {/* Modals */}
+      {showLandlordModal && (
+        <LandlordInfoModal listing={listing} onClose={() => setShowLandlordModal(false)} />
+      )}
+
+      {showContactModal && (
+        <Contact
+          listing={listing}
+          onClose={() => setShowContactModal(false)}
+        />
+      )}
+
+      {/* Alert Message */}
+      {showAlert && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className="bg-slate-800 text-white px-6 py-3 rounded-lg shadow-lg">
+            {alertText}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
