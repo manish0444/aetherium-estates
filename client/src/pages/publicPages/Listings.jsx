@@ -1,43 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Swiper, SwiperSlide } from "swiper/react";
-import SwiperCore from "swiper";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Navigation, EffectFade } from "swiper/modules";
-import { useNavigate } from "react-router-dom";
-import "swiper/css/bundle";
-import {
-  Bath,
-  Bed,
-  Sofa,
-  MapPin,
-  Share2,
-  Info,
-  Loader2,
-  User,
-  X,
-  Mail,
-  Phone,
-  HomeIcon,
-  Eye,
-  Heart,
-  Home,
-  Tag,
-  Maximize2,
-  Grid,
-  ArrowUpDown,
-  Wrench,
-  Shield,
-  Calendar,
-  Check,
-  DollarSign,
-  Car,
-  Star,
-  Crown,
-  Badge,
-  Building2,
-} from "lucide-react";
+import { User, X, Mail, Phone, Star, Crown, Badge, MapPin, Eye, Share2, Heart, Info, Bed, Bath, Maximize2, Grid, ArrowUpDown, Car, Check, DollarSign, Shield, Calendar, Wrench, Building2, Loader2, Home } from "lucide-react";
+import PropTypes from 'prop-types';
 import Contact from "../../components/Contact";
+import { useFavorites } from '../../context/FavoritesContext';
+import { getDeviceId } from '../../utils/deviceId';
+import MobileListingView from '../../components/MobileListingView';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, EffectFade } from "swiper/modules";
+import "swiper/css/bundle";
 import "leaflet/dist/leaflet.css";
 import {
   MapContainer,
@@ -48,8 +20,6 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
-import { getDeviceId } from '../../utils/deviceId';
-import { useFavorites } from '../../context/FavoritesContext';
 
 // Fix for default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -117,6 +87,10 @@ const RoleBadge = ({ role }) => {
       </div>
     </div>
   );
+};
+
+RoleBadge.propTypes = {
+  role: PropTypes.string.isRequired,
 };
 
 const LandlordInfoModal = ({ listing, onClose }) => {
@@ -243,164 +217,34 @@ const LandlordInfoModal = ({ listing, onClose }) => {
   );
 };
 
-export default function Listing() {
-  SwiperCore.use([Navigation, EffectFade]);
+LandlordInfoModal.propTypes = {
+  listing: PropTypes.shape({
+    userRef: PropTypes.string.isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+const Listings = () => {
   const [listing, setListing] = useState(null);
-  const [landlordInfo, setLandlordInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [contact, setContact] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [showLandlordModal, setShowLandlordModal] = useState(false);
-  const [coordinates, setCoordinates] = useState([51.505, -0.09]);
   const [viewCount, setViewCount] = useState(0);
-  const params = useParams();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { currentUser } = useSelector((state) => state.user);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
   const navigate = useNavigate();
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertText, setAlertText] = useState("");
+  const params = useParams();
+  const { favoritesContextIsFavorite, handleFavoriteClick } = useFavorites() || {};
+
+  // Add map state
+  const [map, setMap] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [map, setMap] = useState(null);
-  const { toggleFavorite, isFavorite: favoritesContextIsFavorite } = useFavorites();
-  const [showFavoritesButton, setShowFavoritesButton] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
 
-  const handleNonLoggedUserClick = (action) => {
-    const message =
-      action === "contact"
-        ? "Please login to contact the landlord"
-        : "Please login to view landlord information";
-
-    setAlertText(message);
-    setShowAlert(true);
-
-    // Redirect after a short delay
-    setTimeout(() => {
-      navigate("/sign-in");
-    }, 2000);
-  };
-  // Check if property is in favorites
-  useEffect(() => {
-    const checkFavoriteStatus = async (userId, listingId) => {
-      try {
-        if (!currentUser) {
-          return false;
-        }
-        
-        const res = await fetch(`/api/favorite/check-favorite/${userId}&${listingId}`);
-        if (!res.ok) {
-          throw new Error('Failed to check favorite status');
-        }
-        
-        const data = await res.json();
-        return data.isFavorite;
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
-        return false;
-      }
-    };
-
-    checkFavoriteStatus(currentUser._id, params.listingId);
-  }, [currentUser, params.listingId]);
-
-  // Handle favorite toggle
-  const handleFavoriteClick = async (e) => {
-    e.preventDefault();
-    
-    if (!currentUser) {
-      setShowAlert(true);
-      setAlertText('Please sign in to save favorites');
-      setTimeout(() => setShowAlert(false), 3000);
-      return;
-    }
-
-    try {
-      const isCurrentlyFavorite = favoritesContextIsFavorite(listing._id);
-      await toggleFavorite(listing);
-      
-      setShowAlert(true);
-      setAlertText(isCurrentlyFavorite ? 'Removed from favorites' : 'Added to favorites');
-      setTimeout(() => setShowAlert(false), 2000);
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      setShowAlert(true);
-      setAlertText('Error updating favorites');
-      setTimeout(() => setShowAlert(false), 3000);
-    }
-  };
-
-  // Function to increment view count
-  const incrementViewCount = async (listingId) => {
-    try {
-      const response = await fetch(
-        `/api/listing/increment-views/${listingId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setViewCount(data.views);
-      }
-    } catch (error) {
-      console.error("Error incrementing view count:", error);
-    }
-  };
-
-  // Geocode address using OpenStreetMap Nominatim
-  const geocodeAddress = async (address) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          address
-        )}`
-      );
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        setCoordinates([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-      }
-    } catch (error) {
-      console.error("Geocoding error:", error);
-    }
-  };
-
-  const fetchLandlordInfo = async (userId) => {
-    try {
-      const res = await fetch(`/api/user/${userId}`);
-      if (!res.ok) {
-        throw new Error('Failed to fetch landlord info');
-      }
-      const data = await res.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching landlord info:', error);
-      return null;
-    }
-  };
-
-  // Function to get address from coordinates
-  const getAddressFromCoords = async (lat, lng) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-      const data = await response.json();
-      return data.display_name;
-    } catch (error) {
-      console.error('Error getting address:', error);
-      return '';
-    }
-  };
-
-  // Map click handler component
+  // Add map click handler component
   const MapClickHandler = () => {
     const map = useMap();
 
@@ -410,9 +254,7 @@ export default function Listing() {
       const handleMapClick = async (e) => {
         const { lat, lng } = e.latlng;
         try {
-          const address = await getAddressFromCoords(lat, lng);
-          // Update the coordinates state
-          setCoordinates([lat, lng]);
+          await getAddressFromCoords(lat, lng);
         } catch (error) {
           console.error('Error handling map click:', error);
         }
@@ -428,7 +270,7 @@ export default function Listing() {
     return null;
   };
 
-  // Location search functionality
+  // Add location search functionality
   const handleLocationSearch = async () => {
     if (!searchQuery.trim()) return;
     
@@ -446,12 +288,11 @@ export default function Listing() {
     }
   };
 
-  // Handle location selection
+  // Add location selection handler
   const handleLocationSelect = (location) => {
     const lat = parseFloat(location.lat);
     const lon = parseFloat(location.lon);
 
-    setCoordinates([lat, lon]);
     if (map) {
       map.flyTo([lat, lon], 16);
     }
@@ -460,33 +301,89 @@ export default function Listing() {
     setSearchQuery(location.display_name);
   };
 
-  const renderAmenities = () => {
-    if (!listing || !listing.amenities) return null;
-
-    const hasAmenities = Object.entries(listing.amenities).some(([_, value]) => value);
-    
-    if (!hasAmenities) return null;
-
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {Object.entries(listing.amenities)
-            .filter(([_, value]) => value)
-            .map(([key]) => (
-              <div key={key} className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-500" />
-                <span className="text-gray-600 capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-              </div>
-            ))}
-        </div>
-      </div>
-    );
+  // Add address geocoding function
+  const getAddressFromCoords = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+      const data = await response.json();
+      return data.display_name;
+    } catch (error) {
+      console.error('Error getting address:', error);
+      return '';
+    }
   };
 
-  // Move formatAddress function here, outside of renderPropertyDetails
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchListing = async () => {
+      try {
+        const res = await fetch(`/api/listing/get/${params.listingId}`);
+        const data = await res.json();
+        if (data.success === false) {
+          setError(data.message);
+          setLoading(false);
+          return;
+        }
+        setListing(data);
+        setLoading(false);
+        setError(null);
+      } catch (error) {
+        setError('Failed to fetch listing');
+        setLoading(false);
+      }
+    };
+
+    fetchListing();
+  }, [params.listingId]);
+
+  useEffect(() => {
+    const updateViewCount = async () => {
+      if (listing?._id) {
+        try {
+          const deviceId = await getDeviceId();
+          const res = await fetch(`/api/listing/view/${listing._id}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ deviceId }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setViewCount(data.viewCount);
+          } else {
+            setError(data.message || 'Failed to update view count');
+          }
+        } catch (error) {
+          setError('Error updating view count: ' + error.message);
+          console.error('Error updating view count:', error);
+        }
+      }
+    };
+
+    updateViewCount();
+  }, [listing?._id]);
+
+  const handleNonLoggedUserClick = (type) => {
+    const message = type === "profile" 
+      ? "Please sign in to view landlord details"
+      : "Please sign in to contact the landlord";
+    
+    if (window.confirm(`${message}. Would you like to sign in?`)) {
+      navigate('/sign-in');
+    }
+  };
+
   const formatAddress = (address) => {
     if (!address) return '';
     
@@ -517,238 +414,49 @@ export default function Listing() {
     return importantParts.slice(0, 3).join(', ');
   };
 
-  const renderPropertyDetails = () => {
-    if (!listing) return null;
-
+  if (isMobile) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Property Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Property Type */}
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-100 rounded-lg">
-              <Home className="h-6 w-6 text-slate-600" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-600">Property Type</p>
-              <p className="font-semibold capitalize">
-                {listing.propertyType} {listing.type === 'rent' 
-                  ? 'for Rent' 
-                  : listing.type === 'lease' 
-                  ? 'for Lease' 
-                  : 'for Sale'}
-              </p>
-            </div>
-          </div>
-
-          {/* Bedrooms */}
-          {listing.bedrooms > 0 && (
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Bed className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Bedrooms</p>
-                <p className="font-semibold">{listing.bedrooms}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Bathrooms */}
-          {listing.bathrooms > 0 && (
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Bath className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Bathrooms</p>
-                <p className="font-semibold">{listing.bathrooms}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Total Area */}
-          {listing.totalArea > 0 && (
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Maximize2 className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Total Area</p>
-                <p className="font-semibold">{listing.totalArea} sq ft</p>
-              </div>
-            </div>
-          )}
-
-          {/* Built-up Area */}
-          {listing.builtUpArea > 0 && (
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Grid className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Built-up Area</p>
-                <p className="font-semibold">{listing.builtUpArea} sq ft</p>
-              </div>
-            </div>
-          )}
-
-          {/* Floor Number */}
-          {listing.floorNumber && (
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <ArrowUpDown className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Floor Number</p>
-                <p className="font-semibold">{listing.floorNumber}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Total Floors */}
-          {listing.totalFloors && (
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-slate-100 rounded-lg">
-                <Building2 className="h-6 w-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Total Floors</p>
-                <p className="font-semibold">{listing.totalFloors}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Parking */}
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-100 rounded-lg">
-              <Car className="h-6 w-6 text-slate-600" />
-            </div>
-            <div>
-              <p className="text-sm text-slate-600">Parking</p>
-              <p className="font-semibold">{listing.parking ? 'Available' : 'Not Available'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MobileListingView
+        listing={listing}
+        loading={loading}
+        error={error}
+        currentUser={currentUser}
+        handleFavoriteClick={handleFavoriteClick}
+        favoritesContextIsFavorite={favoritesContextIsFavorite || (() => false)}
+        setShowLandlordModal={setShowLandlordModal}
+        setShowContactModal={setShowContactModal}
+        handleNonLoggedUserClick={handleNonLoggedUserClick}
+        formatAddress={formatAddress}
+        viewCount={viewCount}
+        copied={copied}
+        setCopied={setCopied}
+        navigate={navigate}
+        customMarkerIcon={customMarkerIcon}
+      />
     );
-  };
-
-  useEffect(() => {
-    const recordView = async () => {
-      if (!listing) return;
-
-      try {
-        const deviceId = getDeviceId();
-        const res = await fetch(`/api/listing/view/${listing._id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ deviceId }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setViewCount(data.views);
-        }
-      } catch (error) {
-        console.error('Error recording view:', error);
-      }
-    };
-
-    recordView();
-  }, [listing?._id]);
-
-  useEffect(() => {
-    const fetchListingAndLandlord = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const res = await fetch(`/api/listing/get/${params.listingId}`);
-        const data = await res.json();
-        
-        if (!res.ok) {
-          setError(data.message || 'Failed to fetch listing');
-          setLoading(false);
-          return;
-        }
-        
-        // Fetch landlord info
-        const landlordData = await fetchLandlordInfo(data.userRef);
-        if (landlordData) {
-          setListing({
-            ...data,
-            landlordEmail: landlordData.email
-          });
-        } else {
-          setListing(data);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching listing:', error);
-        setError('Failed to fetch listing details');
-        setLoading(false);
-      }
-    };
-
-    if (params.listingId) {
-    fetchListingAndLandlord();
-    }
-  }, [params.listingId]);
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {loading ? (
+        {loading ? (
         <div className="flex justify-center items-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
-      ) : error ? (
-        <div className="text-center text-red-500 p-4">{error}</div>
-      ) : listing ? (
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
-          {/* Mobile View Header - Only visible on mobile */}
-          <div className="lg:hidden mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {listing.name}
-            </h1>
-            <div className="flex items-center gap-2 mb-3 text-slate-600">
-              <MapPin className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm truncate" title={listing.address}>
-                {formatAddress(listing.address)}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-base font-semibold bg-slate-100 text-slate-900">
-                {listing.currency === 'custom' ? listing.customCurrency :
-                 listing.currency === 'NPR' ? 'Rs.' :
-                 listing.currency === 'USD' ? '$' : '₹'}
-                {listing.offer
-                  ? (listing.regularPrice - listing.discountPrice).toLocaleString()
-                  : listing.regularPrice.toLocaleString()}
-                {listing.type === "rent" && " / month"}
-              </span>
-              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                For {listing.type === "rent" 
-                  ? "Rent" 
-                  : listing.type === "lease" 
-                  ? "Lease" 
-                  : "Sale"}
-              </span>
-            </div>
           </div>
-
+        ) : error ? (
+        <div className="text-center text-red-500 p-4">{error}</div>
+        ) : listing ? (
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
               <div className="relative bg-gray-100 rounded-xl overflow-hidden">
                 <Swiper
+                  modules={[Navigation, EffectFade]}
                   navigation
                   effect="fade"
                   className="rounded-xl listing-swiper"
                   style={{
-                    height: "min(50vh, 400px)",
-                    minHeight: "250px",
+                    height: "min(60vh, 500px)",
+                    minHeight: "300px",
                   }}
                 >
                   {listing.imageUrls.map((url) => (
@@ -764,12 +472,10 @@ export default function Listing() {
                     </SwiperSlide>
                   ))}
                 </Swiper>
-
-                {/* Action buttons container with improved mobile layout */}
-                <div className="absolute top-4 right-4 z-20 flex items-center gap-2 flex-wrap">
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
                   <button
                     className={`p-3 rounded-full backdrop-blur-sm transition-all duration-300 group ${
-                      favoritesContextIsFavorite(listing._id)
+                      favoritesContextIsFavorite?.(listing._id)
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : "bg-white/90 text-slate-700 hover:bg-white/75"
                     }`}
@@ -777,48 +483,31 @@ export default function Listing() {
                   >
                     <Heart
                       className={`h-4 w-4 group-hover:scale-110 transition-transform ${
-                        favoritesContextIsFavorite(listing._id) ? "fill-current" : ""
+                        favoritesContextIsFavorite?.(listing._id) ? "fill-current" : ""
                       }`}
                     />
                   </button>
-                  
-                  {favoritesContextIsFavorite(listing._id) && (
+                    </div>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate('/favorites');
-                      }}
-                      className="px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-slate-700 hover:bg-white/75 transition-all duration-300"
-                    >
-                      View Favorites
-                    </button>
-                  )}
-                </div>
-
-                {/* Share button with mobile optimization */}
-                <button
                   className="absolute top-4 left-4 z-20 p-3 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white/75 transition-all duration-300 group"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    setCopied(true);
-                    setTimeout(() => {
-                      setCopied(false);
-                    }, 2000);
-                  }}
-                >
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                    >
                   <Share2 className="h-4 w-4 text-slate-700 group-hover:scale-110 transition-transform" />
-                </button>
+                    </button>
 
                 <div className="absolute bottom-4 left-4 z-20">
-                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+                  <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
                     <Eye className="h-4 w-4 text-slate-600" />
                     <span className="text-sm font-medium">{viewCount} views</span>
                   </div>
                 </div>
               </div>
 
-              {/* Desktop-only header */}
-              <div className="hidden lg:block space-y-6">
+              <div className="space-y-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">
                     {listing.name}
@@ -849,242 +538,383 @@ export default function Listing() {
                       : "Sale"}
                   </span>
                 </div>
+
+            <div className="space-y-6">
+                  {/* Description Section */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                  {listing.description}
+                </p>
               </div>
 
-              {/* Mobile-optimized sections */}
-              <div className="space-y-4 sm:space-y-6">
-                {/* Quick Info Section - Mobile Only */}
-                <div className="lg:hidden grid grid-cols-2 gap-3 bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-                  {listing.bedrooms > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Bed className="h-5 w-5 text-slate-600" />
-                      <span className="text-sm">{listing.bedrooms} Beds</span>
-                    </div>
-                  )}
-                  {listing.bathrooms > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Bath className="h-5 w-5 text-slate-600" />
-                      <span className="text-sm">{listing.bathrooms} Baths</span>
-                    </div>
-                  )}
-                  {listing.totalArea > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Maximize2 className="h-5 w-5 text-slate-600" />
-                      <span className="text-sm">{listing.totalArea} sq ft</span>
-                    </div>
-                  )}
-                  {listing.parking && (
-                    <div className="flex items-center gap-2">
-                      <Car className="h-5 w-5 text-slate-600" />
-                      <span className="text-sm">Parking</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Description Section */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Description</h2>
-                  <p className="text-gray-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                    {listing.description}
-                  </p>
-                </div>
-
-                {/* Property Details Section */}
-                {renderPropertyDetails()}
-
-                {/* Amenities Section */}
-                {renderAmenities()}
-
-                {/* Financial Details Section - Mobile Optimized */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Financial Details</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Regular Price */}
+                  {/* Property Details Section */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Property Details</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Property Type */}
                     <div className="flex items-center gap-3">
-                      <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                        <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm text-slate-600">Regular Price</p>
-                        <p className="text-sm sm:text-base font-semibold">
-                          {listing.currency === 'custom' ? listing.customCurrency :
-                           listing.currency === 'NPR' ? 'Rs.' :
-                           listing.currency === 'USD' ? '$' : '₹'}
-                          {listing.regularPrice.toLocaleString()}
-                          {listing.type === 'rent' && '/month'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Maintenance Fee */}
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                        <Wrench className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm text-slate-600">Maintenance Fee</p>
-                        <p className="text-sm sm:text-base font-semibold">
-                          {listing.maintenanceFees > 0 ? (
-                            <>
-                              {listing.currency === 'custom' ? listing.customCurrency :
-                               listing.currency === 'NPR' ? 'Rs.' :
-                               listing.currency === 'USD' ? '$' : '₹'}
-                              {listing.maintenanceFees.toLocaleString()}
-                            </>
-                          ) : 'Not Specified'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Security Deposit */}
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                        <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm text-slate-600">Security Deposit</p>
-                        <p className="text-sm sm:text-base font-semibold">
-                          {listing.deposit > 0 ? (
-                            <>
-                              {listing.currency === 'custom' ? listing.customCurrency :
-                               listing.currency === 'NPR' ? 'Rs.' :
-                               listing.currency === 'USD' ? '$' : '₹'}
-                              {listing.deposit.toLocaleString()}
-                            </>
-                          ) : 'Not Specified'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Minimum Lease Term */}
-                    {listing.type === 'rent' && (
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 sm:p-3 bg-slate-100 rounded-lg">
-                          <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-slate-600" />
+                        <div className="p-3 bg-slate-100 rounded-lg">
+                          <Home className="h-6 w-6 text-slate-600" />
                         </div>
                         <div>
-                          <p className="text-xs sm:text-sm text-slate-600">Minimum Lease Term</p>
-                          <p className="text-sm sm:text-base font-semibold">
-                            {listing.minLeaseTerm || 'Not Specified'}
+                          <p className="text-sm text-slate-600">Property Type</p>
+                          <p className="font-semibold capitalize">
+                            {listing.propertyType} {listing.type === 'rent' 
+                              ? 'for Rent' 
+                              : listing.type === 'lease' 
+                              ? 'for Lease' 
+                              : 'for Sale'}
                           </p>
                         </div>
                       </div>
-                    )}
+
+                      {/* Bedrooms */}
+                      {listing.bedrooms > 0 && (
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-slate-100 rounded-lg">
+                            <Bed className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Bedrooms</p>
+                            <p className="font-semibold">{listing.bedrooms}</p>
+                      </div>
+                    </div>
+                  )}
+
+                      {/* Bathrooms */}
+                  {listing.bathrooms > 0 && (
+                    <div className="flex items-center gap-3">
+                          <div className="p-3 bg-slate-100 rounded-lg">
+                            <Bath className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Bathrooms</p>
+                            <p className="font-semibold">{listing.bathrooms}</p>
+                      </div>
+                    </div>
+                  )}
+
+                      {/* Total Area */}
+                  {listing.totalArea > 0 && (
+                    <div className="flex items-center gap-3">
+                          <div className="p-3 bg-slate-100 rounded-lg">
+                            <Maximize2 className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Total Area</p>
+                            <p className="font-semibold">{listing.totalArea} sq ft</p>
+                      </div>
+                    </div>
+                  )}
+
+                      {/* Built-up Area */}
+                  {listing.builtUpArea > 0 && (
+                    <div className="flex items-center gap-3">
+                          <div className="p-3 bg-slate-100 rounded-lg">
+                            <Grid className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Built-up Area</p>
+                            <p className="font-semibold">{listing.builtUpArea} sq ft</p>
+                      </div>
+                    </div>
+                  )}
+
+                      {/* Floor Number */}
+                  {listing.floorNumber && (
+                    <div className="flex items-center gap-3">
+                          <div className="p-3 bg-slate-100 rounded-lg">
+                            <ArrowUpDown className="h-6 w-6 text-slate-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-600">Floor Number</p>
+                            <p className="font-semibold">{listing.floorNumber}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Total Floors */}
+                      {listing.totalFloors && (
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-slate-100 rounded-lg">
+                            <Building2 className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                            <p className="text-sm text-slate-600">Total Floors</p>
+                            <p className="font-semibold">{listing.totalFloors}</p>
+                      </div>
+                    </div>
+                  )}
+
+                      {/* Parking */}
+                  <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-100 rounded-lg">
+                          <Car className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Parking</p>
+                          <p className="font-semibold">{listing.parking ? 'Available' : 'Not Available'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial Details Section */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Financial Details</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Regular Price */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-100 rounded-lg">
+                          <DollarSign className="h-6 w-6 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Regular Price</p>
+                          <p className="font-semibold">
+                            {listing.currency === 'custom' ? listing.customCurrency :
+                             listing.currency === 'NPR' ? 'Rs.' :
+                             listing.currency === 'USD' ? '$' : '₹'}
+                            {listing.regularPrice.toLocaleString()}
+                            {listing.type === 'rent' && '/month'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Maintenance Fee */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-100 rounded-lg">
+                          <Wrench className="h-6 w-6 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Maintenance Fee (Monthly)</p>
+                          <p className="font-semibold">
+                            {listing.maintenanceFees > 0 ? (
+                              <>
+                                {listing.currency === 'custom' ? listing.customCurrency :
+                                 listing.currency === 'NPR' ? 'Rs.' :
+                                 listing.currency === 'USD' ? '$' : '₹'}
+                                {listing.maintenanceFees.toLocaleString()}
+                              </>
+                            ) : 'Not Specified'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Security Deposit */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-100 rounded-lg">
+                          <Shield className="h-6 w-6 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Security Deposit</p>
+                          <p className="font-semibold">
+                            {listing.deposit > 0 ? (
+                              <>
+                                {listing.currency === 'custom' ? listing.customCurrency :
+                                 listing.currency === 'NPR' ? 'Rs.' :
+                                 listing.currency === 'USD' ? '$' : '₹'}
+                                {listing.deposit.toLocaleString()}
+                              </>
+                            ) : 'Not Specified'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Payment Frequency */}
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-100 rounded-lg">
+                          <Calendar className="h-6 w-6 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Payment Frequency</p>
+                          <p className="font-semibold capitalize">
+                            {listing.paymentFrequency || 'Monthly'}
+                          </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Contact Section - Mobile Optimized */}
-            <div className="order-1 lg:order-2">
-              <div className="sticky top-4 space-y-4 sm:space-y-6">
-                {/* Contact Card */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex-shrink-0">
-                      <img
-                        src={listing.userAvatar || "/default-avatar.png"}
-                        alt="Landlord"
-                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover"
-                      />
+                  {listing.amenities && Object.values(listing.amenities).some(value => value) && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {Object.entries(listing.amenities)
+                      .filter(([, value]) => value)
+                      .map(([key]) => (
+                        <div key={key} className="flex items-center gap-2">
+                              <Check className="h-5 w-5 text-green-500" />
+                          <span className="text-gray-600 capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                        </div>
+                      ))}
+                      </div>
                     </div>
-                    <div className="flex-grow min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">
-                        {listing.userName || "Landlord"}
+                  )}
+                </div>
+
+                {listing.offer && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-emerald-600 mt-0.5" />
+                    <div>
+                      <h3 className="text-emerald-800 font-semibold">
+                        Special Offer!
                       </h3>
-                      <p className="text-sm text-gray-500">Property Owner</p>
-                    </div>
-                    <button
-                      onClick={() => setShowLandlordModal(true)}
-                      className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <Info className="w-5 h-5 text-gray-500" />
-                    </button>
+                      <p className="text-emerald-700">
+                        Save {listing.currency === 'custom' ? listing.customCurrency :
+                             listing.currency === 'NPR' ? 'Rs.' :
+                             listing.currency === 'USD' ? '$' : '₹'}
+                        {listing.discountPrice.toLocaleString()} on this property
+                      </p>
                   </div>
+                </div>
+              )}
 
-                  {/* Contact Buttons */}
-                  <div className="space-y-3">
-                    {currentUser ? (
-                      <>
-                        <button
-                          onClick={() => setShowContactModal(true)}
-                          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                        >
-                          Contact Landlord
-                        </button>
-                        <button
-                          onClick={() => setShowLandlordModal(true)}
-                          className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
-                        >
-                          View Landlord Info
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleNonLoggedUserClick('contact')}
-                          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                        >
-                          Contact Landlord
-                        </button>
-                        <button
-                          onClick={() => handleNonLoggedUserClick('info')}
-                          className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
-                        >
-                          View Landlord Info
-                        </button>
-                      </>
+              {listing?.userRef !== currentUser?._id && (
+                  <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() =>
+                      currentUser
+                        ? setShowLandlordModal(true)
+                        : handleNonLoggedUserClick("profile")
+                    }
+                      className="flex-1 px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                      <User className="h-5 w-5" />
+                      View Landlord Info
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      currentUser
+                        ? setShowContactModal(true)
+                        : handleNonLoggedUserClick("contact")
+                    }
+                      className="flex-1 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition-colors duration-200"
+                  >
+                      Contact Landlord
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+            <div className="h-[300px] lg:h-[calc(100vh-4rem)] order-1 lg:order-2 lg:sticky lg:top-4">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-full">
+                <div className="mb-4 relative">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleLocationSearch();
+                        }
+                      }}
+                      placeholder="Search for a location in Nepal..."
+                      className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <button
+                      onClick={handleLocationSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-600"
+                    >
+                      Search
+                    </button>
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Map Section */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="p-4 sm:p-6">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Location</h2>
-                    <div className="relative h-[300px] sm:h-[400px]">
-                      <MapContainer
-                        center={coordinates}
-                        zoom={15}
-                        scrollWheelZoom={false}
-                        className="h-full w-full rounded-lg"
-                      >
-                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                        <Marker position={coordinates} icon={customMarkerIcon}>
-                          <Popup>{listing.address}</Popup>
-                        </Marker>
-                        <ZoomControl position="bottomright" />
-                        <MapClickHandler />
-                      </MapContainer>
+                  {searchResults.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {searchResults.map((result, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleLocationSelect(result)}
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 focus:outline-none focus:bg-blue-50 transition-colors duration-150"
+                        >
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {result.display_name.split(',')[0]}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                {result.display_name.split(',').slice(1).join(',')}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                </div>
+                  )}
+      </div>
+
+                <MapContainer
+                  className="h-full w-full rounded-lg listing-map"
+                  center={[listing.latitude, listing.longitude]}
+                  zoom={15}
+                  scrollWheelZoom={false}
+                  dragging={true}
+                  doubleClickZoom={true}
+                  zoomControl={false}
+                  whenCreated={setMap}
+                >
+                  <ZoomControl position="bottomright" />
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapClickHandler />
+                  <Marker position={[listing.latitude, listing.longitude]} icon={customMarkerIcon}>
+                    <Popup>
+                      <div className="text-center">
+                        <img 
+                          src={listing.imageUrls[0]} 
+                          alt={listing.name}
+                          className="w-32 h-24 object-cover rounded mb-2"
+                        />
+                        <p className="font-medium">{listing.name}</p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {formatAddress(listing.address)}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
               </div>
             </div>
           </div>
         </div>
       ) : null}
 
-      {/* Modals */}
-      {showLandlordModal && (
-        <LandlordInfoModal listing={listing} onClose={() => setShowLandlordModal(false)} />
+      {showLandlordModal && listing && (
+        <LandlordInfoModal
+          listing={listing}
+          onClose={() => setShowLandlordModal(false)}
+        />
       )}
-
-      {showContactModal && (
+      {showContactModal && listing && (
         <Contact
           listing={listing}
           onClose={() => setShowContactModal(false)}
         />
       )}
 
-      {/* Alert Message */}
-      {showAlert && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div className="bg-slate-800 text-white px-6 py-3 rounded-lg shadow-lg">
-            {alertText}
-          </div>
+      {/* Copy Link Toast */}
+      {copied && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-black/75 text-white px-4 py-2 rounded-lg text-sm">
+          Link copied!
         </div>
       )}
     </main>
   );
-}
+};
+
+export default Listings;
