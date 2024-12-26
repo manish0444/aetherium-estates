@@ -229,33 +229,33 @@ export default function Search() {
 
             {/* Filter buttons row */}
             <div className="flex gap-2 sm:gap-4">
-              <button
-                type="button"
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="px-4 py-2.5 border rounded-lg flex items-center gap-2 hover:bg-gray-50 bg-white"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="px-4 py-2.5 border rounded-lg flex items-center gap-2 hover:bg-gray-50 bg-white"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">Filters</span>
-              </button>
+            </button>
 
-              <select
-                onChange={handleChange}
-                value={`${sidebardata.sort}_${sidebardata.order}`}
-                id="sort_order"
-                className="px-4 py-2.5 border rounded-lg bg-white hover:bg-gray-50"
-              >
-                <option value="regularPrice_desc">Price: High to Low</option>
-                <option value="regularPrice_asc">Price: Low to High</option>
-                <option value="createdAt_desc">Latest</option>
-                <option value="createdAt_asc">Oldest</option>
-              </select>
+            <select
+              onChange={handleChange}
+              value={`${sidebardata.sort}_${sidebardata.order}`}
+              id="sort_order"
+              className="px-4 py-2.5 border rounded-lg bg-white hover:bg-gray-50"
+            >
+              <option value="regularPrice_desc">Price: High to Low</option>
+              <option value="regularPrice_asc">Price: Low to High</option>
+              <option value="createdAt_desc">Latest</option>
+              <option value="createdAt_asc">Oldest</option>
+            </select>
 
-              <button
-                type="submit"
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Search
-              </button>
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Search
+            </button>
             </div>
           </form>
 
@@ -266,153 +266,153 @@ export default function Search() {
               <div className="fixed inset-x-0 bottom-0 lg:relative bg-white rounded-t-xl lg:rounded-none shadow-xl lg:shadow-none transform transition-transform duration-300 ease-in-out">
                 <div className="max-h-[80vh] overflow-y-auto p-4 lg:p-6">
                   {/* Filter content */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Price Range Filter */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Price Range</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          placeholder="Min"
-                          value={priceRange.min}
-                          onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        />
-                        <span>-</span>
-                        <input
-                          type="number"
-                          placeholder="Max"
-                          value={priceRange.max}
-                          onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        />
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Price Range Filter */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Price Range</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
+                      <span>-</span>
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
                     </div>
+                  </div>
 
-                    {/* Area Range Filter */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Area (sq ft)</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          placeholder="Min"
-                          value={areaRange.min}
-                          onChange={(e) => setAreaRange(prev => ({ ...prev, min: e.target.value }))}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        />
-                        <span>-</span>
-                        <input
-                          type="number"
-                          placeholder="Max"
-                          value={areaRange.max}
-                          onChange={(e) => setAreaRange(prev => ({ ...prev, max: e.target.value }))}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        />
-                      </div>
+                  {/* Area Range Filter */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Area (sq ft)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={areaRange.min}
+                        onChange={(e) => setAreaRange(prev => ({ ...prev, min: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
+                      <span>-</span>
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={areaRange.max}
+                        onChange={(e) => setAreaRange(prev => ({ ...prev, max: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
                     </div>
+                  </div>
 
-                    {/* Bedrooms & Bathrooms */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
-                        <select
-                          value={bedrooms}
-                          onChange={(e) => setBedrooms(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        >
-                          <option value="any">Any</option>
-                          {[1,2,3,4,5,6].map(num => (
-                            <option key={num} value={num}>{num}+ Beds</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
-                        <select
-                          value={bathrooms}
-                          onChange={(e) => setBathrooms(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        >
-                          <option value="any">Any</option>
-                          {[1,2,3,4,5].map(num => (
-                            <option key={num} value={num}>{num}+ Baths</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Property Status & Furnishing */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select
-                          value={propertyStatus}
-                          onChange={(e) => setPropertyStatus(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        >
-                          {propertyStatusOptions.map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
-                        <select
-                          value={furnishing}
-                          onChange={(e) => setFurnishing(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-lg"
-                        >
-                          <option value="any">Any</option>
-                          <option value="furnished">Furnished</option>
-                          <option value="semifurnished">Semi-Furnished</option>
-                          <option value="unfurnished">Unfurnished</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Amenities */}
-                    <div className="col-span-full">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                        {amenitiesOptions.map(amenity => (
-                          <label key={amenity} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={selectedAmenities.includes(amenity)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedAmenities(prev => [...prev, amenity]);
-                                } else {
-                                  setSelectedAmenities(prev => prev.filter(a => a !== amenity));
-                                }
-                              }}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-600 capitalize">
-                              {amenity.replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                          </label>
+                  {/* Bedrooms & Bathrooms */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                      <select
+                        value={bedrooms}
+                        onChange={(e) => setBedrooms(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="any">Any</option>
+                        {[1,2,3,4,5,6].map(num => (
+                          <option key={num} value={num}>{num}+ Beds</option>
                         ))}
-                      </div>
+                      </select>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
+                      <select
+                        value={bathrooms}
+                        onChange={(e) => setBathrooms(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="any">Any</option>
+                        {[1,2,3,4,5].map(num => (
+                          <option key={num} value={num}>{num}+ Baths</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                    {/* Property Type */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Property Type</h3>
-                      {propertyTypes.map(type => (
-                        <div key={type.id} className="flex gap-2">
+                  {/* Property Status & Furnishing */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        value={propertyStatus}
+                        onChange={(e) => setPropertyStatus(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        {propertyStatusOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
+                      <select
+                        value={furnishing}
+                        onChange={(e) => setFurnishing(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="any">Any</option>
+                        <option value="furnished">Furnished</option>
+                        <option value="semifurnished">Semi-Furnished</option>
+                        <option value="unfurnished">Unfurnished</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="col-span-full">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {amenitiesOptions.map(amenity => (
+                        <label key={amenity} className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            id={type.id}
-                            className="w-5"
-                            onChange={handleChange}
-                            checked={sidebardata.type === type.id}
+                            checked={selectedAmenities.includes(amenity)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedAmenities(prev => [...prev, amenity]);
+                              } else {
+                                setSelectedAmenities(prev => prev.filter(a => a !== amenity));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span>{type.label}</span>
-                        </div>
+                          <span className="text-sm text-gray-600 capitalize">
+                            {amenity.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                        </label>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Property Type */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Property Type</h3>
+                    {propertyTypes.map(type => (
+                      <div key={type.id} className="flex gap-2">
+                        <input
+                          type="checkbox"
+                          id={type.id}
+                          className="w-5"
+                          onChange={handleChange}
+                          checked={sidebardata.type === type.id}
+                        />
+                        <span>{type.label}</span>
+                      </div>
+                    ))}
                     </div>
                   </div>
                   

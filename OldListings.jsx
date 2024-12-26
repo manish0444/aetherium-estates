@@ -36,11 +36,6 @@ import {
   Crown,
   Badge,
   Building2,
-  Clock,
-  MapPinned,
-  Ruler,
-  Users,
-  MessageCircle
 } from "lucide-react";
 import Contact from "../../components/Contact";
 import "leaflet/dist/leaflet.css";
@@ -55,7 +50,6 @@ import {
 import L from "leaflet";
 import { getDeviceId } from '../../utils/deviceId';
 import { useFavorites } from '../../context/FavoritesContext';
-import { formatDistanceToNow } from 'date-fns';
 
 // Fix for default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -274,10 +268,6 @@ export default function Listing() {
   const { toggleFavorite, isFavorite: favoritesContextIsFavorite } = useFavorites();
   const [showFavoritesButton, setShowFavoritesButton] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-  const [showMobileMap, setShowMobileMap] = useState(false);
-  const [showMobileGallery, setShowMobileGallery] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [showShareOptions, setShowShareOptions] = useState(false);
 
   const handleNonLoggedUserClick = (action) => {
     const message =
@@ -708,32 +698,6 @@ export default function Listing() {
     }
   }, [params.listingId]);
 
-  // Format address for mobile view
-  const formatAddress = (address) => {
-    const parts = address.split(',');
-    return {
-      main: parts[0],
-      secondary: parts.slice(1).join(',').trim()
-    };
-  };
-
-  // Mobile share handler
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: listing.name,
-          text: `Check out this property: ${listing.name}`,
-          url: window.location.href
-        });
-      } catch (err) {
-        setShowShareOptions(true);
-      }
-    } else {
-      setShowShareOptions(true);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-gray-50">
       {loading ? (
@@ -743,226 +707,467 @@ export default function Listing() {
       ) : error ? (
         <div className="text-center text-red-500 p-4">{error}</div>
       ) : listing ? (
-        <>
-          {/* Mobile View */}
-          <div className="lg:hidden">
-            {/* Mobile Header */}
-            <div className="relative">
-              <Swiper
-                navigation
-                effect="fade"
-                className="h-[300px]"
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
+              <div className="relative bg-gray-100 rounded-xl overflow-hidden">
+          <Swiper
+            navigation
+            effect="fade"
+                  className="rounded-xl listing-swiper"
+                  style={{
+                    height: "min(60vh, 500px)",
+                    minHeight: "300px",
+                  }}
+          >
+            {listing.imageUrls.map((url) => (
+              <SwiperSlide key={url}>
+                <div
+                  className="h-full w-full"
+                  style={{
+                    background: `url(${url}) center/cover no-repeat`,
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50" />
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+          <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+            <button
+              className={`p-3 rounded-full backdrop-blur-sm transition-all duration-300 group ${
+                favoritesContextIsFavorite(listing._id)
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "bg-white/90 text-slate-700 hover:bg-white/75"
+              }`}
+              onClick={handleFavoriteClick}
+            >
+              <Heart
+                className={`h-4 w-4 group-hover:scale-110 transition-transform ${
+                  favoritesContextIsFavorite(listing._id) ? "fill-current" : ""
+                }`}
+              />
+            </button>
+            
+            {favoritesContextIsFavorite(listing._id) && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/favorites');
+                }}
+                className="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full text-sm font-medium text-slate-700 hover:bg-white/75 transition-all duration-300"
               >
-                {listing.imageUrls.map((url, index) => (
-                  <SwiperSlide key={index}>
-                    <div
-                      className="h-full w-full bg-center bg-cover"
-                      style={{ backgroundImage: `url(${url})` }}
-                    />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+                See your favorites
+              </button>
+            )}
+          </div>
+          <button
+            className="absolute top-4 left-4 z-20 p-3 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white/75 transition-all duration-300 group"
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              setCopied(true);
+              setTimeout(() => {
+                setCopied(false);
+              }, 2000);
+            }}
+          >
+            <Share2 className="h-4 w-4 text-slate-700 group-hover:scale-110 transition-transform" />
+          </button>
 
-              {/* Mobile Header Actions */}
-              <div className="absolute top-4 right-4 flex gap-2">
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-full bg-white/90 shadow-lg"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setShowMobileGallery(true)}
-                  className="p-2 rounded-full bg-white/90 shadow-lg"
-                >
-                  <Grid className="w-5 h-5" />
-                </button>
+          <div className="absolute bottom-4 left-4 z-20">
+            <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+              <Eye className="h-4 w-4 text-slate-600" />
+              <span className="text-sm font-medium">{viewCount} views</span>
+            </div>
+          </div>
+
+          {copied && (
+            <div className="absolute top-16 right-4 z-10">
+              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
+                <p className="text-sm">Link copied to clipboard!</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {listing.name}
+              </h1>
+              <div className="flex items-center gap-2 mt-2 text-slate-600">
+                <MapPin className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm truncate" title={listing.address}>
+                  {formatAddress(listing.address)}
+                </span>
               </div>
             </div>
 
-            {/* Mobile Content */}
-            <div className="px-4 py-6 space-y-6">
-              {/* Basic Info */}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{listing.name}</h1>
-                <div className="mt-2 flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  <div>
-                    <p className="font-medium">{formatAddress(listing.address).main}</p>
-                    <p className="text-sm">{formatAddress(listing.address).secondary}</p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-3">
+              <span className="inline-flex items-center px-6 py-2 rounded-full text-lg font-semibold bg-slate-100 text-slate-900">
+                {listing.currency === 'custom' ? listing.customCurrency :
+                 listing.currency === 'NPR' ? 'Rs.' :
+                 listing.currency === 'USD' ? '$' : '₹'}
+                {listing.offer
+                  ? (listing.regularPrice - listing.discountPrice).toLocaleString()
+                  : listing.regularPrice.toLocaleString()}
+                {listing.type === "rent" && " / month"}
+              </span>
+              <span className="inline-flex items-center px-6 py-2 rounded-full font-semibold bg-blue-100 text-blue-800">
+                For {listing.type === "rent" 
+                  ? "Rent" 
+                  : listing.type === "lease" 
+                  ? "Lease" 
+                  : "Sale"}
+              </span>
+            </div>
 
-              {/* Key Features */}
-              <div className="grid grid-cols-3 gap-4 py-4 border-y">
-                <div className="text-center">
-                  <Bed className="w-6 h-6 mx-auto mb-1 text-blue-600" />
-                  <span className="text-sm font-medium">{listing.bedrooms} Beds</span>
-                </div>
-                <div className="text-center">
-                  <Bath className="w-6 h-6 mx-auto mb-1 text-blue-600" />
-                  <span className="text-sm font-medium">{listing.bathrooms} Baths</span>
-                </div>
-                <div className="text-center">
-                  <Maximize2 className="w-6 h-6 mx-auto mb-1 text-blue-600" />
-                  <span className="text-sm font-medium">
-                    {listing.area || 'N/A'} sq.ft
-                  </span>
-                </div>
-              </div>
-
-              {/* Price Section */}
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-600">Price</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ${listing.regularPrice.toLocaleString()}
-                      {listing.type === 'rent' && '/month'}
-                    </p>
-                  </div>
-                  {listing.offer && (
-                    <div className="bg-green-50 px-3 py-1 rounded-full">
-                      <p className="text-green-700 font-medium">
-                        Save ${listing.discountPrice.toLocaleString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Property Details */}
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Property Details</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Home className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm">{listing.propertyType}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Tag className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm">{listing.type}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm">
-                      Listed {formatDistanceToNow(new Date(listing.createdAt))} ago
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm">{listing.views} views</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Description</h2>
-                <p className="text-gray-600 text-sm leading-relaxed">
+            <div className="space-y-6">
+              {/* Description Section */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
                   {listing.description}
                 </p>
               </div>
 
-              {/* Map Toggle Button */}
-              <button
-                onClick={() => setShowMobileMap(!showMobileMap)}
-                className="w-full py-3 px-4 bg-white border rounded-lg flex items-center justify-center gap-2"
-              >
-                <MapPinned className="w-5 h-5" />
-                {showMobileMap ? 'Hide Map' : 'Show Map'}
-              </button>
+              {/* Property Details Section */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Property Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Property Type */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <Home className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Property Type</p>
+                      <p className="font-semibold capitalize">
+                        {listing.propertyType} {listing.type === 'rent' 
+                          ? 'for Rent' 
+                          : listing.type === 'lease' 
+                          ? 'for Lease' 
+                          : 'for Sale'}
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Collapsible Map */}
-              {showMobileMap && (
-                <div className="h-[300px] rounded-lg overflow-hidden">
-                  <MapContainer
-                    center={[listing.latitude, listing.longitude]}
-                    zoom={15}
-                    className="h-full w-full"
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={[listing.latitude, listing.longitude]}>
-                      <Popup>{listing.address}</Popup>
-                    </Marker>
-                  </MapContainer>
+                  {/* Bedrooms */}
+                  {listing.bedrooms > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <Bed className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Bedrooms</p>
+                        <p className="font-semibold">{listing.bedrooms}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bathrooms */}
+                  {listing.bathrooms > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <Bath className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Bathrooms</p>
+                        <p className="font-semibold">{listing.bathrooms}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Total Area */}
+                  {listing.totalArea > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <Maximize2 className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Total Area</p>
+                        <p className="font-semibold">{listing.totalArea} sq ft</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Built-up Area */}
+                  {listing.builtUpArea > 0 && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <Grid className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Built-up Area</p>
+                        <p className="font-semibold">{listing.builtUpArea} sq ft</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Floor Number */}
+                  {listing.floorNumber && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <ArrowUpDown className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Floor Number</p>
+                        <p className="font-semibold">{listing.floorNumber}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Total Floors */}
+                  {listing.totalFloors && (
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <Building2 className="h-6 w-6 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Total Floors</p>
+                        <p className="font-semibold">{listing.totalFloors}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parking */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <Car className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Parking</p>
+                      <p className="font-semibold">{listing.parking ? 'Available' : 'Not Available'}</p>
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
 
-              {/* Contact Buttons */}
-              {listing?.userRef !== currentUser?._id && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => currentUser ? setShowLandlordModal(true) : handleNonLoggedUserClick("profile")}
-                      className="flex-1 py-3 px-4 bg-white border border-gray-300 rounded-lg font-medium"
-                    >
-                      View Landlord Info
-                    </button>
-                    <button
-                      onClick={() => currentUser ? setShowContactModal(true) : handleNonLoggedUserClick("contact")}
-                      className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium"
-                    >
-                      Contact Landlord
-                    </button>
+              {/* Financial Details Section */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Financial Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Regular Price */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <DollarSign className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Regular Price</p>
+                      <p className="font-semibold">
+                        {listing.currency === 'custom' ? listing.customCurrency :
+                         listing.currency === 'NPR' ? 'Rs.' :
+                         listing.currency === 'USD' ? '$' : '₹'}
+                        {listing.regularPrice.toLocaleString()}
+                        {listing.type === 'rent' && '/month'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Maintenance Fee */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <Wrench className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Maintenance Fee (Monthly)</p>
+                      <p className="font-semibold">
+                        {listing.maintenanceFees > 0 ? (
+                          <>
+                            {listing.currency === 'custom' ? listing.customCurrency :
+                             listing.currency === 'NPR' ? 'Rs.' :
+                             listing.currency === 'USD' ? '$' : '₹'}
+                            {listing.maintenanceFees.toLocaleString()}
+                          </>
+                        ) : 'Not Specified'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Security Deposit */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <Shield className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Security Deposit</p>
+                      <p className="font-semibold">
+                        {listing.deposit > 0 ? (
+                          <>
+                            {listing.currency === 'custom' ? listing.customCurrency :
+                             listing.currency === 'NPR' ? 'Rs.' :
+                             listing.currency === 'USD' ? '$' : '₹'}
+                            {listing.deposit.toLocaleString()}
+                          </>
+                        ) : 'Not Specified'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Frequency */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <Calendar className="h-6 w-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600">Payment Frequency</p>
+                      <p className="font-semibold capitalize">
+                        {listing.paymentFrequency || 'Monthly'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {listing.amenities && Object.values(listing.amenities).some(value => value) && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {Object.entries(listing.amenities)
+                      .filter(([_, value]) => value)
+                      .map(([key]) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <Check className="h-5 w-5 text-green-500" />
+                          <span className="text-gray-600 capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Desktop View - Keep Existing Code */}
-          <div className="hidden lg:block">
-            {/* Your existing desktop view code */}
-          </div>
-
-          {/* Modals */}
-          {showLandlordModal && (
-            <LandlordInfoModal
-              listing={listing}
-              onClose={() => setShowLandlordModal(false)}
-            />
-          )}
-
-          {showContactModal && (
-            <Contact 
-              listing={listing}
-              onClose={() => setShowContactModal(false)}
-            />
-          )}
-
-          {/* Mobile Gallery Modal */}
-          {showMobileGallery && (
-            <div className="fixed inset-0 bg-black z-50">
-              <div className="relative h-full">
-                <button
-                  onClick={() => setShowMobileGallery(false)}
-                  className="absolute top-4 right-4 z-10 p-2 bg-white/10 rounded-full"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-                <Swiper
-                  navigation
-                  className="h-full"
-                  initialSlide={activeImageIndex}
-                >
-                  {listing.imageUrls.map((url, index) => (
-                    <SwiperSlide key={index}>
-                      <div className="h-full flex items-center justify-center">
-                        <img
-                          src={url}
-                          alt={`Property ${index + 1}`}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
+            {listing.offer && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-start gap-3">
+                <Info className="h-5 w-5 text-emerald-600 mt-0.5" />
+                <div>
+                  <h3 className="text-emerald-800 font-semibold">
+                    Special Offer!
+                  </h3>
+                  <p className="text-emerald-700">
+                    Save Rs. {listing.discountPrice} on this property
+                  </p>
+                </div>
               </div>
+            )}
+
+            {listing?.userRef !== currentUser?._id && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() =>
+                    currentUser
+                      ? setShowLandlordModal(true)
+                      : handleNonLoggedUserClick("profile")
+                  }
+                  className="flex-1 px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  <User className="h-5 w-5" />
+                  View Landlord Info
+                </button>
+
+                <button
+                  onClick={() =>
+                    currentUser
+                      ? setShowContactModal(true)
+                      : handleNonLoggedUserClick("contact")
+                  }
+                  className="flex-1 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition-colors duration-200"
+                >
+                  Contact Landlord
+                </button>
+              </div>
+            )}
+
+            {showContactModal && (
+              <Contact 
+                listing={listing} 
+                onClose={() => setShowContactModal(false)} 
+              />
+            )}
+              </div>
+          </div>
+
+            <div className="h-[300px] lg:h-[calc(100vh-4rem)] order-1 lg:order-2 lg:sticky lg:top-4">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-full">
+              <div className="mb-4 relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search for a location in Nepal..."
+                    className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
+
+                {searchResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {searchResults.map((result, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleLocationSelect(result)}
+                        className="w-full text-left px-4 py-2 hover:bg-blue-50 focus:outline-none focus:bg-blue-50 transition-colors duration-150"
+                      >
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {result.display_name.split(',')[0]}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate">
+                              {result.display_name.split(',').slice(1).join(',')}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <MapContainer
+                  className="h-full w-full rounded-lg listing-map"
+                center={[listing.latitude, listing.longitude]}
+                zoom={15}
+                  scrollWheelZoom={false}
+                dragging={true}
+                doubleClickZoom={true}
+                zoomControl={false}
+                whenCreated={setMap}
+              >
+                <ZoomControl position="bottomright" />
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MapClickHandler />
+                <Marker position={[listing.latitude, listing.longitude]} icon={customMarkerIcon}>
+                  <Popup>
+                    <div className="text-center">
+                      <img 
+                        src={listing.imageUrls[0]} 
+                        alt={listing.name}
+                        className="w-32 h-24 object-cover rounded mb-2"
+                      />
+                      <p className="font-medium">{listing.name}</p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {formatAddress(listing.address)}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              </MapContainer>
             </div>
-          )}
-        </>
+          </div>
+        </div>
+      </div>
       ) : null}
 
       {showAlert && (
@@ -971,10 +1176,11 @@ export default function Listing() {
         </div>
       )}
 
-      {showShareOptions && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out animate-fade-in">
-          <p>Share options not available</p>
-        </div>
+      {showLandlordModal && (
+        <LandlordInfoModal
+          listing={listing}
+          onClose={() => setShowLandlordModal(false)}
+        />
       )}
     </main>
   );
