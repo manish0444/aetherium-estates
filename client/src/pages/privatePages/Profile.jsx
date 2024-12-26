@@ -21,7 +21,7 @@ import { RoleBadge } from '../../components/RoleBadge';
 
 export default function Profile() {
   const dispatch = useDispatch();
-  const { currentUser, loading, error } = useSelector((state) => state.user);
+  const { currentUser, loading,  } = useSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState("profile");
 
   const fileRef = useRef(null);
@@ -43,6 +43,8 @@ export default function Profile() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 10;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (file) {
@@ -69,10 +71,34 @@ export default function Profile() {
   }, [currentUser]);
 
   useEffect(() => {
-    if (activeTab === 'listings') {
-      handleShowListings();
+    const fetchUserListings = async () => {
+      if (!currentUser?._id) return;
+      
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/user/listings/${currentUser._id}`);
+        const data = await res.json();
+        
+        if (res.ok) {
+          setUserListings(data || []);
+        } else {
+          setError(data.message || 'Failed to fetch listings');
+          setUserListings([]);
+        }
+      } catch (error) {
+        console.error('Error fetching listings:', error);
+        setError('Failed to fetch listings');
+        setUserListings([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (currentUser?._id && activeTab === 'listings') {
+      fetchUserListings();
     }
-  }, [activeTab]);
+  }, [currentUser?._id, activeTab]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -303,7 +329,7 @@ export default function Profile() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {statsArray.map((stat) => (
             <StatsCard 
               key={stat.title}
@@ -459,18 +485,21 @@ export default function Profile() {
               </Link>
             </div>
 
-            {listingsLoading ? (
+            {isLoading ? (
               <div className="flex justify-center py-8">
-                <ReactLoading type="spin" color="#3B82F6" height={40} width={40} />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
-            ) : userListings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ) : error ? (
+              <div className="text-red-500 text-center py-8">{error}</div>
+            ) : userListings && userListings.length > 0 ? (
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                 {userListings.map((listing) => (
+                  <div key={listing._id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                   <ListingCard
-                    key={listing._id}
                     listing={listing}
                     onDelete={handleListingDelete}
                   />
+                  </div>
                 ))}
               </div>
             ) : (

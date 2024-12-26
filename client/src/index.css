@@ -108,3 +108,9 @@ body {
   animation: shimmer 4s linear infinite;
   background-size: 200% auto;
 }
+
+@layer utilities {
+  .grid-cols-responsive {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}

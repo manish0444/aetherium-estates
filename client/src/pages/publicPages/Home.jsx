@@ -278,7 +278,7 @@ export default function Home() {
                 </svg>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {offerListings.map((listing) => (
                 <div key={listing._id} className="transform hover:-translate-y-2 transition-all duration-300 bg-white rounded-2xl shadow-lg hover:shadow-xl p-3 sm:p-4">
                   <ListingItem listing={listing} />
@@ -310,7 +310,7 @@ export default function Home() {
                   </svg>
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {rentListings.map((listing) => (
                   <div key={listing._id} className="transform hover:-translate-y-2 transition-all duration-300 bg-white rounded-2xl shadow-lg hover:shadow-xl p-3 sm:p-4">
                     <ListingItem listing={listing} />
@@ -342,7 +342,7 @@ export default function Home() {
                 </svg>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {saleListings.map((listing) => (
                 <div key={listing._id} className="transform hover:-translate-y-2 transition-all duration-300 bg-white rounded-2xl shadow-lg hover:shadow-xl p-3 sm:p-4">
                   <ListingItem listing={listing} />
@@ -372,7 +372,7 @@ export default function Home() {
                 </svg>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {leaseListings.map((listing) => (
                 <div key={listing._id} className="transform hover:-translate-y-2 transition-all duration-300 bg-white rounded-2xl shadow-lg hover:shadow-xl p-3 sm:p-4">
                   <ListingItem listing={listing} />

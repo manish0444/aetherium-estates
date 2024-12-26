@@ -3,43 +3,42 @@ import { FaEdit, FaTrash } from 'react-icons/fa';
 
 export default function ListingCard({ listing, onDelete }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="relative h-48">
+    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+      <div className="relative aspect-[4/3]">
         <img
           src={listing.imageUrls[0]}
           alt={listing.name}
           className="w-full h-full object-cover"
         />
-        <div className="absolute top-2 right-2">
-          <span className="px-2 py-1 bg-black/50 text-white rounded-full text-sm">
-            {listing.type}
-          </span>
-        </div>
-      </div>
-      
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{listing.name}</h3>
-        <p className="text-gray-500 text-sm mb-4">{listing.address}</p>
-        
-        <div className="flex items-center justify-between">
-          <span className="text-blue-600 font-semibold">
-            ${listing.regularPrice.toLocaleString()}
-            {listing.type === 'rent' && '/month'}
-          </span>
-          
-          <div className="flex gap-2">
+        {onDelete && (
+          <div className="absolute top-2 right-2 flex gap-2">
             <Link
               to={`/update-listing/${listing._id}`}
-              className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+              className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600"
             >
-              <FaEdit />
+              Edit
             </Link>
             <button
               onClick={() => onDelete(listing._id)}
-              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+              className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600"
             >
-              <FaTrash />
+              Delete
             </button>
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-semibold truncate">{listing.name}</h3>
+        <p className="text-gray-500 text-sm truncate">{listing.address}</p>
+        <div className="mt-2">
+          <p className="text-lg font-bold">
+            ${listing.regularPrice.toLocaleString()}
+            {listing.type === 'rent' && ' /month'}
+          </p>
+          <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+            <span>{listing.bedrooms} beds</span>
+            <span>•</span>
+            <span>{listing.bathrooms} baths</span>
           </div>
         </div>
       </div>

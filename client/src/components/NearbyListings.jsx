@@ -164,7 +164,7 @@ const NearbyListings = () => {
               )}
             </button>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-end">
               <select
                 value={maxDistance}
                 onChange={(e) => setMaxDistance(Number(e.target.value))}
@@ -176,7 +176,7 @@ const NearbyListings = () => {
                 <option value={50}>Within 50km</option>
               </select>
               <Link 
-                className="inline-flex items-center px-6 py-3 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all duration-300 font-medium"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all duration-300 font-medium"
                 to="/search"
               >
                 View all nearby
@@ -197,14 +197,14 @@ const NearbyListings = () => {
 
         {/* Listings grid */}
         {!loading && nearbyListings.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12 mt-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-20">
             {nearbyListings.map((listing) => (
               <div key={listing._id} className="transform hover:-translate-y-2 transition-all duration-300 bg-white rounded-2xl shadow-lg hover:shadow-xl p-3 sm:p-4">
                 <ListingItem listing={listing} />
                 <div className="mt-3 flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-gray-600 text-sm">{listing.address}</p>
+                    <p className="text-gray-600 text-sm truncate">{listing.address}</p>
                     <p className="text-blue-600 text-sm font-medium">
                       {listing.distance.toFixed(1)}km away
                     </p>
