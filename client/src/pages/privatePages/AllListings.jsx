@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { Edit, Trash2, Plus, Search, Filter, SortAsc, Eye } from 'lucide-react';
+import { UserRestrictionNotice } from "../privatePages/CreateListing";
 
 export default function AllListings() {
   const { currentUser } = useSelector((state) => state.user);
@@ -12,10 +13,34 @@ export default function AllListings() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [filterType, setFilterType] = useState('all');
+  const [userListingsCount, setUserListingsCount] = useState(0);
+  const [remainingListings, setRemainingListings] = useState(3);
+  const [hasReachedLimit, setHasReachedLimit] = useState(false);
 
   useEffect(() => {
     fetchListings();
   }, []);
+
+  // Add effect to fetch listing count
+  useEffect(() => {
+    const fetchListingsCount = async () => {
+      try {
+        const res = await fetch(`/api/user/listings/count/${currentUser._id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setUserListingsCount(data.totalCount || 0);
+          setRemainingListings(data.remainingListings || 0);
+          setHasReachedLimit(data.hasReachedLimit || false);
+        }
+      } catch (error) {
+        console.error('Error fetching listings count:', error);
+      }
+    };
+
+    if (currentUser?._id) {
+      fetchListingsCount();
+    }
+  }, [currentUser?._id]);
 
   const fetchListings = async () => {
     try {
@@ -47,6 +72,15 @@ export default function AllListings() {
         return;
       }
       setUserListings(prev => prev.filter(listing => listing._id !== listingId));
+      
+      // Refetch the listings count to update the restrictions notice
+      const countRes = await fetch(`/api/user/listings/count/${currentUser._id}`);
+      const countData = await countRes.json();
+      if (countRes.ok) {
+        setUserListingsCount(countData.totalCount || 0);
+        setRemainingListings(countData.remainingListings || 0);
+        setHasReachedLimit(countData.hasReachedLimit || false);
+      }
     } catch (error) {
       setError("Failed to delete listing");
     }
@@ -67,6 +101,15 @@ export default function AllListings() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Show restriction notice for non-agent users */}
+        {currentUser.role !== 'agent' && (
+          <UserRestrictionNotice 
+            listingsCount={userListingsCount}
+            remainingListings={remainingListings}
+            hasReachedLimit={hasReachedLimit}
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Your Listings</h1>

@@ -846,7 +846,7 @@ const ReviewSubmitForm = ({ formData }) => {
   );
 };
 
-const UserRestrictionNotice = ({ listingsCount, remainingListings, hasReachedLimit }) => {
+export const UserRestrictionNotice = ({ listingsCount, remainingListings, hasReachedLimit }) => {
   return (
     <div className={`${
       hasReachedLimit ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'
@@ -1077,6 +1077,7 @@ export default function CreateListing() {
       if (!currentUser?._id) return;
       
       try {
+        // Use the correct endpoint path
         const res = await fetch(`/api/user/listings/count/${currentUser._id}`);
         const data = await res.json();
         
