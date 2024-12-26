@@ -538,24 +538,7 @@ export default function Profile() {
           className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2'
         />
       </div>
-      {activeTab === 'listings' && (
-        <div className='flex flex-col gap-4'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-            {userListings.map((listing) => (
-              <ListingCard key={listing._id} listing={listing} />
-            ))}
-          </div>
-          {hasMore && (
-            <button
-              onClick={loadMore}
-              disabled={listingsLoading}
-              className='bg-slate-700 text-white rounded-lg p-3 hover:opacity-95 disabled:opacity-80'
-            >
-              {listingsLoading ? 'Loading...' : 'Load More'}
-            </button>
-          )}
-        </div>
-      )}
+     
     </div>
   );
 }

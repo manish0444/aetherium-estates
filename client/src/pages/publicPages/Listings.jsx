@@ -663,11 +663,14 @@ export default function Listing() {
     const fetchListingAndLandlord = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         const res = await fetch(`/api/listing/get/${params.listingId}`);
         const data = await res.json();
         
-        if (data.success === false) {
-          setError(data.message);
+        if (!res.ok) {
+          setError(data.message || 'Failed to fetch listing');
+          setLoading(false);
           return;
         }
         
@@ -676,24 +679,27 @@ export default function Listing() {
         if (landlordData) {
           setListing({
             ...data,
-            landlordEmail: landlordData.email // Add landlord email to listing object
+            landlordEmail: landlordData.email
           });
         } else {
           setListing(data);
         }
         
         setLoading(false);
-        setError(false);
       } catch (error) {
-        setError(error.message);
+        console.error('Error fetching listing:', error);
+        setError('Failed to fetch listing details');
         setLoading(false);
       }
     };
+
+    if (params.listingId) {
     fetchListingAndLandlord();
+    }
   }, [params.listingId]);
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4 sm:px-8">
+    <main className="min-h-screen bg-gray-50 py-4 sm:py-8">
       {loading ? (
         <div className="flex justify-center items-center min-h-[50vh]">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -701,15 +707,15 @@ export default function Listing() {
       ) : error ? (
         <div className="text-center text-red-500">{error}</div>
       ) : listing ? (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-6 order-2 lg:order-1">
-              <div className="relative mb-8">
+              <div className="relative">
                 <Swiper
                   navigation
                   effect="fade"
                   className="rounded-xl overflow-hidden"
-                  style={{ height: "500px" }}
+                  style={{ height: "300px", minHeight: "300px" }}
                 >
                   {listing.imageUrls.map((url) => (
                     <SwiperSlide key={url}>
@@ -1127,7 +1133,7 @@ export default function Listing() {
                   className="h-full w-full rounded-lg"
                   center={[listing.latitude, listing.longitude]}
                   zoom={15}
-                  scrollWheelZoom={true}
+                  scrollWheelZoom={false}
                   dragging={true}
                   doubleClickZoom={true}
                   zoomControl={false}

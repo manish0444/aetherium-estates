@@ -1,9 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 
 export default function ListingCard({ listing, onDelete }) {
+  const navigate = useNavigate();
+
+  const handleCardClick = (e) => {
+    // Don't navigate if clicking edit or delete buttons
+    if (e.target.closest('button') || e.target.closest('a')) {
+      return;
+    }
+    navigate(`/listing/${listing._id}`);
+  };
+
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+    <div 
+      onClick={handleCardClick}
+      className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+    >
       <div className="relative aspect-[4/3]">
         <img
           src={listing.imageUrls[0]}
@@ -11,15 +24,19 @@ export default function ListingCard({ listing, onDelete }) {
           className="w-full h-full object-cover"
         />
         {onDelete && (
-          <div className="absolute top-2 right-2 flex gap-2">
+          <div className="absolute top-2 right-2 flex gap-2 z-10">
             <Link
               to={`/update-listing/${listing._id}`}
               className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600"
+              onClick={(e) => e.stopPropagation()}
             >
               Edit
             </Link>
             <button
-              onClick={() => onDelete(listing._id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(listing._id);
+              }}
               className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600"
             >
               Delete
