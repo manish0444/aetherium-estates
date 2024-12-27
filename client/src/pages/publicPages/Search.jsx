@@ -1,50 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
-import EnhancedPropertyListing from "../../components/EnhancedPropertyListing";
+import { Search as SearchIcon, SlidersHorizontal, Navigation, Loader2 } from "lucide-react";
+import ListingItem from "../../components/ListingItem";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
 
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  
-  return (
-    <div className="flex items-center justify-center gap-2 mt-8">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
+const ITEMS_PER_PAGE = 6;
+
+const LoadingSkeleton = ({ isDarkMode }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    {[...Array(6)].map((_, index) => (
+      <div 
+        key={index} 
+        className={`rounded-xl overflow-hidden ${
+          isDarkMode ? 'bg-slate-800' : 'bg-white'
+        }`}
       >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      
-      {pages.map((page) => (
-        <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          className={`px-4 py-2 rounded-lg ${
-            currentPage === page
-              ? "bg-blue-600 text-white"
-              : "border hover:bg-gray-50"
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-      
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
-    </div>
-  );
-};
+        <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+        <div className="p-4 space-y-3">
+          <div className="h-6 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+          <div className="grid grid-cols-3 gap-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 export default function Search() {
   const navigate = useNavigate();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [sidebardata, setSidebardata] = useState({
     searchTerm: "",
     type: "all",
@@ -53,13 +43,14 @@ export default function Search() {
     offer: false,
     sort: "created_at",
     order: "desc",
+    nearby: false,
   });
 
   const [loading, setLoading] = useState(false);
   const [listings, setListings] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const ITEMS_PER_PAGE = 12;
+  const [userLocation, setUserLocation] = useState(null);
 
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [areaRange, setAreaRange] = useState({ min: '', max: '' });
@@ -99,6 +90,7 @@ export default function Search() {
       offer: urlParams.get('offer') === 'true',
       sort: urlParams.get('sort') || 'created_at',
       order: urlParams.get('order') || 'desc',
+      nearby: urlParams.get('nearby') === 'true',
     });
 
     setPriceRange({
@@ -120,8 +112,46 @@ export default function Search() {
       setSelectedAmenities(amenities.split(','));
     }
 
+    if (urlParams.get('nearby') === 'true') {
+      getUserLocation();
+    }
+
     fetchListings(urlParams);
   }, [location.search]);
+
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Error getting your location. Please try again.');
+      }
+    );
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   const fetchListings = async (params) => {
     try {
@@ -133,7 +163,33 @@ export default function Search() {
       const res = await fetch(`/api/listing/get?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch listings');
       
-      const data = await res.json();
+      let data = await res.json();
+
+      // Filter by address if searchTerm exists
+      if (params.get('searchTerm')) {
+        const searchTerms = params.get('searchTerm').toLowerCase().split(' ');
+        data = data.filter(listing => 
+          searchTerms.some(term => 
+            listing.address.toLowerCase().includes(term)
+          )
+        );
+      }
+
+      // Sort by distance if nearby is true
+      if (params.get('nearby') === 'true' && userLocation) {
+        data = data
+          .map(listing => ({
+            ...listing,
+            distance: calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              parseFloat(listing.latitude),
+              parseFloat(listing.longitude)
+            )
+          }))
+          .sort((a, b) => a.distance - b.distance);
+      }
+
       setListings(data);
       setTotalPages(Math.ceil(data.length / ITEMS_PER_PAGE));
     } catch (error) {
@@ -150,7 +206,7 @@ export default function Search() {
     if (e.target.id === "searchTerm") {
       setSidebardata({ ...sidebardata, searchTerm: e.target.value });
     }
-    if (["parking", "furnished", "offer"].includes(e.target.id)) {
+    if (["parking", "furnished", "offer", "nearby"].includes(e.target.id)) {
       setSidebardata({
         ...sidebardata,
         [e.target.id]: e.target.checked,
@@ -171,6 +227,7 @@ export default function Search() {
     if (sidebardata.parking) urlParams.set('parking', 'true');
     if (sidebardata.furnished) urlParams.set('furnished', 'true');
     if (sidebardata.offer) urlParams.set('offer', 'true');
+    if (sidebardata.nearby) urlParams.set('nearby', 'true');
 
     if (priceRange.min) urlParams.set('minPrice', priceRange.min);
     if (priceRange.max) urlParams.set('maxPrice', priceRange.max);
@@ -203,13 +260,17 @@ export default function Search() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDarkMode ? 'bg-slate-900' : 'bg-gray-50'
+    }`}>
       {/* Top Filter Bar */}
-      <div className="sticky top-0 z-10 bg-white shadow-sm border-b">
+      <div className={`sticky top-0 z-10 shadow-sm border-b transition-colors duration-300 ${
+        isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
+      }`}>
         <div className="container mx-auto px-4 py-4">
           <form onSubmit={(e) => {
             e.preventDefault();
-            setIsFilterOpen(false); // Close filter on search
+            setIsFilterOpen(false);
             handleSubmit(e);
           }} className="flex flex-col sm:flex-row gap-4">
             {/* Search input */}
@@ -218,223 +279,254 @@ export default function Search() {
                 <input
                   type="text"
                   id="searchTerm"
-                  placeholder="Search properties..."
-                  className="w-full px-4 py-2.5 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Search by location..."
+                  className={`w-full px-4 py-2.5 pl-10 rounded-lg transition-colors duration-300 ${
+                    isDarkMode 
+                      ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-sky-500' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+                  }`}
                   value={sidebardata.searchTerm}
                   onChange={handleChange}
                 />
-                <SearchIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <SearchIcon className={`absolute left-3 top-3 h-5 w-5 ${
+                  isDarkMode ? 'text-slate-400' : 'text-gray-400'
+                }`} />
               </div>
             </div>
 
             {/* Filter buttons row */}
             <div className="flex gap-2 sm:gap-4">
-            <button
-              type="button"
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="px-4 py-2.5 border rounded-lg flex items-center gap-2 hover:bg-gray-50 bg-white"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={`p-2.5 rounded-lg flex items-center justify-center transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-slate-700 text-sky-400 hover:bg-slate-600' 
+                    : 'bg-white text-blue-600 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                {isDarkMode ? '🌙' : '☀️'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-slate-700 text-white hover:bg-slate-600' 
+                    : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">Filters</span>
-            </button>
+              </button>
 
-            <select
-              onChange={handleChange}
-              value={`${sidebardata.sort}_${sidebardata.order}`}
-              id="sort_order"
-              className="px-4 py-2.5 border rounded-lg bg-white hover:bg-gray-50"
-            >
-              <option value="regularPrice_desc">Price: High to Low</option>
-              <option value="regularPrice_asc">Price: Low to High</option>
-              <option value="createdAt_desc">Latest</option>
-              <option value="createdAt_asc">Oldest</option>
-            </select>
+              <select
+                onChange={handleChange}
+                value={`${sidebardata.sort}_${sidebardata.order}`}
+                id="sort_order"
+                className={`px-4 py-2.5 rounded-lg transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-slate-700 text-white border-slate-600 focus:border-sky-500' 
+                    : 'bg-white text-gray-900 border-gray-300 focus:border-blue-500'
+                }`}
+              >
+                <option value="regularPrice_desc">Price: High to Low</option>
+                <option value="regularPrice_asc">Price: Low to High</option>
+                <option value="createdAt_desc">Latest</option>
+                <option value="createdAt_asc">Oldest</option>
+              </select>
 
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Search
-            </button>
+              <button
+                type="submit"
+                className={`px-6 py-2.5 rounded-lg font-medium transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-sky-500 text-white hover:bg-sky-600' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                Search
+              </button>
             </div>
           </form>
 
-          {/* Mobile-friendly filter modal */}
+          {/* Filter modal with dark mode support */}
           {isFilterOpen && (
             <div className="fixed inset-0 z-50 lg:relative lg:inset-auto">
               <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={() => setIsFilterOpen(false)} />
-              <div className="fixed inset-x-0 bottom-0 lg:relative bg-white rounded-t-xl lg:rounded-none shadow-xl lg:shadow-none transform transition-transform duration-300 ease-in-out">
+              <div className={`fixed inset-x-0 bottom-0 lg:relative transform transition-transform duration-300 ease-in-out ${
+                isDarkMode ? 'bg-slate-800' : 'bg-white'
+              } rounded-t-xl lg:rounded-none shadow-xl lg:shadow-none`}>
                 <div className="max-h-[80vh] overflow-y-auto p-4 lg:p-6">
                   {/* Filter content */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Price Range Filter */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Price Range</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={priceRange.min}
-                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
-                      <span>-</span>
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={priceRange.max}
-                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Price Range Filter */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Price Range</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={priceRange.min}
+                          onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        />
+                        <span>-</span>
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={priceRange.max}
+                          onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Area Range Filter */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Area (sq ft)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={areaRange.min}
-                        onChange={(e) => setAreaRange(prev => ({ ...prev, min: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
-                      <span>-</span>
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={areaRange.max}
-                        onChange={(e) => setAreaRange(prev => ({ ...prev, max: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
+                    {/* Area Range Filter */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Area (sq ft)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={areaRange.min}
+                          onChange={(e) => setAreaRange(prev => ({ ...prev, min: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        />
+                        <span>-</span>
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={areaRange.max}
+                          onChange={(e) => setAreaRange(prev => ({ ...prev, max: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Bedrooms & Bathrooms */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
-                      <select
-                        value={bedrooms}
-                        onChange={(e) => setBedrooms(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      >
-                        <option value="any">Any</option>
-                        {[1,2,3,4,5,6].map(num => (
-                          <option key={num} value={num}>{num}+ Beds</option>
+                    {/* Bedrooms & Bathrooms */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+                        <select
+                          value={bedrooms}
+                          onChange={(e) => setBedrooms(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        >
+                          <option value="any">Any</option>
+                          {[1,2,3,4,5,6].map(num => (
+                            <option key={num} value={num}>{num}+ Beds</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
+                        <select
+                          value={bathrooms}
+                          onChange={(e) => setBathrooms(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        >
+                          <option value="any">Any</option>
+                          {[1,2,3,4,5].map(num => (
+                            <option key={num} value={num}>{num}+ Baths</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Property Status & Furnishing */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select
+                          value={propertyStatus}
+                          onChange={(e) => setPropertyStatus(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        >
+                          {propertyStatusOptions.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
+                        <select
+                          value={furnishing}
+                          onChange={(e) => setFurnishing(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg"
+                        >
+                          <option value="any">Any</option>
+                          <option value="furnished">Furnished</option>
+                          <option value="semifurnished">Semi-Furnished</option>
+                          <option value="unfurnished">Unfurnished</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Amenities */}
+                    <div className="col-span-full">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                        {amenitiesOptions.map(amenity => (
+                          <label key={amenity} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedAmenities.includes(amenity)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedAmenities(prev => [...prev, amenity]);
+                                } else {
+                                  setSelectedAmenities(prev => prev.filter(a => a !== amenity));
+                                }
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-600 capitalize">
+                              {amenity.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                          </label>
                         ))}
-                      </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
-                      <select
-                        value={bathrooms}
-                        onChange={(e) => setBathrooms(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      >
-                        <option value="any">Any</option>
-                        {[1,2,3,4,5].map(num => (
-                          <option key={num} value={num}>{num}+ Baths</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
 
-                  {/* Property Status & Furnishing */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select
-                        value={propertyStatus}
-                        onChange={(e) => setPropertyStatus(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      >
-                        {propertyStatusOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
-                      <select
-                        value={furnishing}
-                        onChange={(e) => setFurnishing(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      >
-                        <option value="any">Any</option>
-                        <option value="furnished">Furnished</option>
-                        <option value="semifurnished">Semi-Furnished</option>
-                        <option value="unfurnished">Unfurnished</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Amenities */}
-                  <div className="col-span-full">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                      {amenitiesOptions.map(amenity => (
-                        <label key={amenity} className="flex items-center space-x-2">
+                    {/* Property Type */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Property Type</h3>
+                      {propertyTypes.map(type => (
+                        <div key={type.id} className="flex gap-2">
                           <input
                             type="checkbox"
-                            checked={selectedAmenities.includes(amenity)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedAmenities(prev => [...prev, amenity]);
-                              } else {
-                                setSelectedAmenities(prev => prev.filter(a => a !== amenity));
-                              }
-                            }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            id={type.id}
+                            className="w-5"
+                            onChange={handleChange}
+                            checked={sidebardata.type === type.id}
                           />
-                          <span className="text-sm text-gray-600 capitalize">
-                            {amenity.replace(/([A-Z])/g, ' $1').trim()}
-                          </span>
-                        </label>
+                          <span>{type.label}</span>
+                        </div>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Property Type */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Property Type</h3>
-                    {propertyTypes.map(type => (
-                      <div key={type.id} className="flex gap-2">
+                    {/* Add nearby filter */}
+                    <div className="p-4 border-t space-y-4">
+                      <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          id={type.id}
-                          className="w-5"
+                          id="nearby"
+                          checked={sidebardata.nearby}
                           onChange={handleChange}
-                          checked={sidebardata.type === type.id}
+                          className={`w-5 h-5 rounded transition-colors duration-300 ${
+                            isDarkMode 
+                              ? 'bg-slate-700 border-slate-600 checked:bg-sky-500' 
+                              : 'bg-white border-gray-300 checked:bg-blue-600'
+                          }`}
                         />
-                        <span>{type.label}</span>
-                      </div>
-                    ))}
+                        <span className={`${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>Show Nearby Properties</span>
+                      </label>
                     </div>
-                  </div>
-                  
-                  {/* Mobile filter actions */}
-                  <div className="mt-6 flex gap-4 lg:hidden">
-                    <button
-                      type="button"
-                      onClick={() => setIsFilterOpen(false)}
-                      className="flex-1 px-4 py-2 border rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      onClick={(e) => {
-                        handleSubmit(e);
-                        setIsFilterOpen(false);
-                      }}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg"
-                    >
-                      Apply Filters
-                    </button>
                   </div>
                 </div>
               </div>
@@ -446,67 +538,87 @@ export default function Search() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">
+          <h2 className={`text-2xl font-semibold ${
+            isDarkMode ? 'text-white' : 'text-gray-800'
+          }`}>
             {loading ? (
-              "Loading..."
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                Loading...
+              </div>
             ) : listings.length > 0 ? (
-              `${listings.length} Properties Found`
+              <div className="flex items-center gap-3">
+                <span>{listings.length} Properties Found</span>
+                {listings.length > ITEMS_PER_PAGE && (
+                  <button
+                    onClick={() => navigate(`/all-properties${location.search}`)}
+                    className={`ml-4 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-800 text-sky-400 hover:bg-slate-700' 
+                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                    }`}
+                  >
+                    View All Properties
+                  </button>
+                )}
+              </div>
             ) : (
               "No Properties Found"
             )}
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {listings.map((listing) => (
-            <Link 
-              to={`/listing/${listing._id}`} 
-              key={listing._id}
-              className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
-            >
-              <div className="relative pb-[75%]">
-                <img
-                  src={listing.imageUrls[0]}
-                  alt={listing.name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+        {loading ? (
+          <LoadingSkeleton isDarkMode={isDarkMode} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {listings.slice(0, ITEMS_PER_PAGE).map((listing) => (
+              <div key={listing._id} className={`transform hover:-translate-y-2 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl ${
+                isDarkMode ? 'bg-slate-800' : 'bg-white'
+              }`}>
+                <ListingItem listing={listing} />
+                {sidebardata.nearby && listing.distance && (
+                  <div className={`px-4 py-2 text-sm ${
+                    isDarkMode ? 'text-slate-300' : 'text-gray-600'
+                  }`}>
+                    <Navigation className="inline-block w-4 h-4 mr-2" />
+                    {listing.distance.toFixed(1)}km away
+                  </div>
+                )}
               </div>
-              <div className="p-3 sm:p-4">
-                <h3 className="font-semibold text-sm sm:text-base truncate">{listing.name}</h3>
-                <p className="text-gray-500 text-xs sm:text-sm truncate">{listing.address}</p>
-                <p className="mt-2 font-bold text-sm sm:text-base">
-                  ${listing.regularPrice.toLocaleString()}
-                  {listing.type === 'rent' && ' /month'}
-                </p>
-                <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <span>{listing.bedrooms} beds</span>
-                  <span>•</span>
-                  <span>{listing.bathrooms} baths</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Simplified pagination */}
-        {!loading && listings.length > 0 && (
-          <div className="flex justify-center items-center gap-4 mt-8 px-4">
+        {/* Pagination */}
+        {!loading && listings.length > ITEMS_PER_PAGE && (
+          <div className="flex justify-center items-center gap-4 mt-8">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border disabled:opacity-50"
+              className={`p-2 rounded-lg disabled:opacity-50 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700' 
+                  : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'
+              }`}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
             
-            <span className="text-sm">
+            <span className={`text-sm ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
               Page {currentPage} of {totalPages}
             </span>
             
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border disabled:opacity-50"
+              className={`p-2 rounded-lg disabled:opacity-50 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700' 
+                  : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'
+              }`}
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -515,7 +627,9 @@ export default function Search() {
 
         {/* Empty State */}
         {!loading && listings.length === 0 && (
-          <div className="text-center py-12">
+          <div className={`text-center py-12 rounded-xl ${
+            isDarkMode ? 'bg-slate-800' : 'bg-white'
+          }`}>
             <div className="max-w-md mx-auto">
               <div className="mb-6">
                 <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -545,6 +659,7 @@ export default function Search() {
                     offer: false,
                     sort: "created_at",
                     order: "desc",
+                    nearby: false,
                   });
                   setPriceRange({ min: '', max: '' });
                   setAreaRange({ min: '', max: '' });

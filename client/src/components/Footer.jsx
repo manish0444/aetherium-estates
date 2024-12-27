@@ -1,188 +1,188 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Linkedin, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock,
-  ArrowRight
-} from 'lucide-react';
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaGithub } from 'react-icons/fa';
+import { useTheme } from '../context/ThemeContext';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
+  const { isDarkMode } = useTheme();
 
-  const quickLinks = [
-    { name: 'About Us', path: '/about' },
-    { name: 'Contact Us', path: '/contact' },
-    { name: 'Terms & Conditions', path: '/terms' },
-    { name: 'Privacy Policy', path: '/privacy' },
-    { name: 'FAQ', path: '/faq' },
-    { name: 'Blog', path: '/blog' }
-  ];
+  const footerLinks = {
+    company: [
+      { name: 'About Us', href: '/about' },
+      { name: 'Careers', href: '/careers' },
+      { name: 'Contact', href: '/contact' },
+      { name: 'Blog', href: '/blog' },
+    ],
+    resources: [
+      { name: 'Properties', href: '/listings' },
+      { name: 'Agents', href: '/agents' },
+      { name: 'Pricing', href: '/pricing' },
+      { name: 'FAQs', href: '/faqs' },
+    ],
+    legal: [
+      { name: 'Privacy Policy', href: '/privacy' },
+      { name: 'Terms of Service', href: '/terms' },
+      { name: 'Cookie Policy', href: '/cookies' },
+      { name: 'Disclaimer', href: '/disclaimer' },
+    ],
+  };
 
-  const propertyTypes = [
-    { name: 'Apartments', path: '/search?type=apartment' },
-    { name: 'Houses', path: '/search?type=house' },
-    { name: 'Villas', path: '/search?type=villa' },
-    { name: 'Commercial', path: '/search?type=commercial' },
-    { name: 'Luxury Homes', path: '/search?type=luxury' }
-  ];
-
-  const popularSearches = [
-    { name: 'Properties for Sale', path: '/search?type=sale' },
-    { name: 'Properties for Rent', path: '/search?type=rent' },
-    { name: 'New Projects', path: '/search?category=new' },
-    { name: 'Featured Properties', path: '/search?featured=true' },
-    { name: 'Special Offers', path: '/search?offer=true' }
+  const socialLinks = [
+    { name: 'Facebook', icon: FaFacebook, href: '#' },
+    { name: 'Twitter', icon: FaTwitter, href: '#' },
+    { name: 'Instagram', icon: FaInstagram, href: '#' },
+    { name: 'LinkedIn', icon: FaLinkedin, href: '#' },
+    { name: 'GitHub', icon: FaGithub, href: '#' },
   ];
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          {/* Company Info */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-6">Estate Elite</h3>
-            <p className="mb-6 text-gray-400">
-              Your trusted partner in finding the perfect property. We provide comprehensive real estate services across the nation.
-            </p>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-blue-500" />
-                <span>+000000</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-blue-500" />
-                <span>contact@.com</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-blue-500" />
-                <span>123 Real Estate </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <span>Mon - Fri: 9:00 AM - 6:00 PM</span>
-              </div>
-            </div>
-          </div>
+    <footer className="transition-colors duration-300">
+      {/* Gradient Border */}
+      <div className={`h-1 ${
+        isDarkMode 
+          ? 'bg-gradient-to-r from-sky-600 via-blue-500 to-sky-600'
+          : 'bg-gradient-to-r from-purple-600 via-blue-500 to-purple-600'
+      }`} />
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-6">Quick Links</h3>
-            <ul className="space-y-4">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  <Link 
-                    to={link.path}
-                    className="flex items-center gap-2 hover:text-blue-500 transition-colors"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Property Types */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-6">Property Types</h3>
-            <ul className="space-y-4">
-              {propertyTypes.map((type, index) => (
-                <li key={index}>
-                  <Link 
-                    to={type.path}
-                    className="flex items-center gap-2 hover:text-blue-500 transition-colors"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    {type.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Popular Searches */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-6">Popular Searches</h3>
-            <ul className="space-y-4">
-              {popularSearches.map((search, index) => (
-                <li key={index}>
-                  <Link 
-                    to={search.path}
-                    className="flex items-center gap-2 hover:text-blue-500 transition-colors"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    {search.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-       
-        <div className="border-t border-gray-800 mt-12 pt-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <h3 className="text-white text-lg font-semibold mb-4">List Your Property for Sale</h3>
-            <p className="text-gray-400 mb-6">
-            To list a property for sale, please contact our admin team for assistance.
-            </p>
-            <form className="flex gap-2 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
-              />
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Send
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Social Links */}
-        <div className="border-t border-gray-800 mt-12 pt-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-blue-500 transition-colors">
-                <Facebook className="h-6 w-6" />
-              </a>
-              <a href="#" className="hover:text-blue-500 transition-colors">
-                <Twitter className="h-6 w-6" />
-              </a>
-              <a href="#" className="hover:text-blue-500 transition-colors">
-                <Instagram className="h-6 w-6" />
-              </a>
-              <a href="#" className="hover:text-blue-500 transition-colors">
-                <Linkedin className="h-6 w-6" />
-              </a>
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <Link to="/privacy" className="hover:text-blue-500 transition-colors">
-                Privacy Policy
+      <div className={`transition-colors duration-300 ${
+        isDarkMode ? 'bg-slate-900' : 'bg-white'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Main Footer Content */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            {/* Brand Section */}
+            <div className="space-y-6">
+              <Link to="/" className="flex items-center space-x-2">
+                <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+                <span className={`text-xl font-bold ${
+                  isDarkMode 
+                    ? 'bg-gradient-to-r from-sky-400 to-blue-500'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-500'
+                } bg-clip-text text-transparent`}>
+                  Aetherium Estates
+                </span>
               </Link>
-              <span>•</span>
-              <Link to="/terms" className="hover:text-blue-500 transition-colors">
-                Terms of Service
-              </Link>
+              <p className={`text-sm ${
+                isDarkMode ? 'text-slate-400' : 'text-gray-600'
+              }`}>
+                Experience the future of real estate with our innovative platform. Find your dream property with advanced search and virtual tours.
+              </p>
+              {/* Social Links */}
+              <div className="flex space-x-4">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`transition-colors ${
+                      isDarkMode 
+                        ? 'text-slate-400 hover:text-sky-400' 
+                        : 'text-gray-400 hover:text-gray-500'
+                    }`}
+                  >
+                    <social.icon className="h-6 w-6" />
+                    <span className="sr-only">{social.name}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            {Object.entries(footerLinks).map(([category, links]) => (
+              <div key={category}>
+                <h3 className={`font-semibold uppercase tracking-wider mb-4 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {category}
+                </h3>
+                <ul className="space-y-3">
+                  {links.map((link) => (
+                    <li key={link.name}>
+                      <Link
+                        to={link.href}
+                        className={`transition-colors ${
+                          isDarkMode 
+                            ? 'text-slate-400 hover:text-white' 
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Newsletter Section */}
+          <div className={`mt-12 pt-8 border-t ${
+            isDarkMode ? 'border-slate-800' : 'border-gray-200'
+          }`}>
+            <div className="max-w-md mx-auto lg:max-w-none">
+              <h3 className={`font-semibold mb-4 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Subscribe to our newsletter
+              </h3>
+              <form className="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className={`flex-1 px-4 py-3 rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'bg-slate-800 border-slate-700 text-white focus:ring-sky-500 focus:border-sky-500' 
+                      : 'bg-gray-100 border-transparent text-gray-900 focus:ring-purple-500 focus:border-purple-500'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  className={`px-6 py-3 font-medium rounded-lg transition-all duration-300 transform hover:scale-105 ${
+                    isDarkMode 
+                      ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-600 hover:to-blue-700' 
+                      : 'bg-gradient-to-r from-purple-600 to-blue-500 text-white hover:from-purple-700 hover:to-blue-600'
+                  }`}
+                >
+                  Subscribe
+                </button>
+              </form>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Copyright */}
-      <div className="bg-gray-950 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-          <p>© {currentYear} Estate Elite. All rights reserved.</p>
+          {/* Bottom Bar */}
+          <div className={`mt-12 pt-8 border-t ${
+            isDarkMode ? 'border-slate-800' : 'border-gray-200'
+          }`}>
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p className={`text-sm ${
+                isDarkMode ? 'text-slate-400' : 'text-gray-600'
+              }`}>
+                © {new Date().getFullYear()} Aetherium Estates. All rights reserved.
+              </p>
+              <div className="mt-4 md:mt-0 flex space-x-6">
+                <Link
+                  to="/privacy"
+                  className={`text-sm transition-colors ${
+                    isDarkMode 
+                      ? 'text-slate-400 hover:text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/terms"
+                  className={`text-sm transition-colors ${
+                    isDarkMode 
+                      ? 'text-slate-400 hover:text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Terms of Service
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

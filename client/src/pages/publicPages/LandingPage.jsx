@@ -116,7 +116,7 @@ export default function LandingPage() {
       <GridBackground>
         <div className="relative z-20">
           {/* Enhanced Hero Section */}
-          <motion.section
+      <motion.section
             style={{ opacity, scale, y }}
             className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-hidden pt-32 pb-20"
           >
@@ -128,7 +128,7 @@ export default function LandingPage() {
 
             {/* Main Content */}
             <div className="relative text-center max-w-5xl mx-auto mb-12">
-              <motion.div
+          <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
@@ -142,28 +142,28 @@ export default function LandingPage() {
               
               <motion.h1 
                 className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-blue-500 to-purple-600"
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8 }}
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8 }}
                 style={{ x: mousePosition.x * 0.5, y: mousePosition.y * 0.5 }}
               >
                 Aetherium Estates
-              </motion.h1>
+            </motion.h1>
               
-              <motion.p
+            <motion.p
                 className="text-xl md:text-2xl text-slate-300 mb-12"
                 initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+              animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 style={{ x: mousePosition.x * 0.3, y: mousePosition.y * 0.3 }}
-              >
+            >
                 Experience the next generation of real estate investment powered by blockchain and AI
-              </motion.p>
+            </motion.p>
 
-              <motion.div
+            <motion.div
                 className="flex flex-wrap justify-center gap-4 mb-12"
                 initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+              animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
                 <button className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg text-lg font-semibold hover:from-sky-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-sky-500/25">
@@ -227,17 +227,17 @@ export default function LandingPage() {
                           <p className="text-xl text-white/90">{card.description}</p>
                         </div>
                         <div className="flex justify-end">
-                          <motion.button
+              <motion.button
                             whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.95 }}
                             className="bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold flex items-center group"
-                          >
-                            Learn More
+              >
+                Learn More
                             <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                          </motion.button>
+              </motion.button>
                         </div>
                       </div>
-                    </motion.div>
+            </motion.div>
                   )
                 ))}
               </AnimatePresence>
@@ -256,8 +256,8 @@ export default function LandingPage() {
                   />
                 ))}
               </div>
-            </div>
-          </motion.section>
+        </div>
+      </motion.section>
 
           {/* Parallax Text */}
           <ParallaxText baseVelocity={-5}>
@@ -283,20 +283,20 @@ export default function LandingPage() {
             </div>
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="text-center mb-16"
-              >
+            className="text-center mb-16"
+          >
                 <h2 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-blue-500 to-purple-600 mb-6">
                   Why Choose Aetherium Estates?
-                </h2>
+            </h2>
                 <p className="text-xl text-slate-300 max-w-3xl mx-auto">
                   Experience the perfect blend of technology and real estate
-                </p>
-              </motion.div>
+            </p>
+          </motion.div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
@@ -387,7 +387,7 @@ export default function LandingPage() {
                   </motion.div>
                 </div>
               </motion.div>
-            </div>
+        </div>
 
             {/* Main Content */}
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -429,18 +429,18 @@ export default function LandingPage() {
                 ) : error ? (
                   <div className="col-span-3 text-center text-red-500 py-20">
                     {error}
-                  </div>
+          </div>
                 ) : filteredListings.length === 0 ? (
                   <div className="col-span-3 text-center text-slate-400 py-20">
                     No properties found
-                  </div>
+        </div>
                 ) : (
                   filteredListings.slice(0, 6).map((listing, index) => (
-                  <motion.div
+          <motion.div
                       key={listing._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.2 }}
                     whileHover={{ scale: 1.02 }}
                     className="group relative"
@@ -500,7 +500,7 @@ export default function LandingPage() {
                         ))}
                       </div>
                     </div>
-                  </motion.div>
+          </motion.div>
                   ))
                 )}
               </div>
@@ -686,9 +686,9 @@ export default function LandingPage() {
                           <p className="text-sky-400">{member.role}</p>
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
+              </motion.div>
+            ))}
+          </div>
               </motion.div>
 
               {/* Call to Action */}
@@ -710,8 +710,8 @@ export default function LandingPage() {
                   </motion.button>
                 </div>
               </motion.div>
-            </div>
-          </section>
+        </div>
+      </section>
 
           {/* Trailblazing Innovation Section */}
           <section className="relative min-h-screen overflow-hidden bg-slate-900 py-24">
@@ -810,10 +810,10 @@ export default function LandingPage() {
                         { value: '0%', label: 'Hidden Fees' },
                         { value: '1M+', label: 'Users' }
                       ].map((stat, index) => (
-                        <motion.div
+          <motion.div
                           key={stat.label}
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.5, delay: index * 0.1 }}
                           className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl border border-slate-700"
                         >
@@ -916,19 +916,19 @@ export default function LandingPage() {
               >
                 <div className="relative inline-block group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-lg" />
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
                     className="relative px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg text-lg font-semibold"
                     onClick={() => navigate('/sign-up')}
-                  >
+            >
                     Start Your Journey
                     <FaArrowRight className="inline-block ml-2" />
-                  </motion.button>
+            </motion.button>
                 </div>
-              </motion.div>
-            </div>
-          </section>
+          </motion.div>
+        </div>
+      </section>
 
           {/* Footer */}
           <footer className="bg-slate-800/50 backdrop-blur-lg border-t border-slate-700">

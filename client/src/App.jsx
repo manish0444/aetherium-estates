@@ -47,6 +47,8 @@ import Solutions from "./pages/publicPages/Solutions";
 import Features from "./pages/publicPages/Features";
 import Pricing from "./pages/publicPages/Pricing";
 import VirtualTour from "./pages/publicPages/VirtualTour";
+import { ThemeProvider } from './context/ThemeContext';
+import AllProperties from "./pages/AllProperties";
 
 // Admin route wrapper - redirects non-admins to home
 const AdminRoute = ({ children }) => {
@@ -233,6 +235,7 @@ function App() {
           <Route path="/listing/:listingId" element={<Listings />} />
           <Route path="/user-profile/:userId" element={<UserProfilePage />} />
           <Route path="/virtual-tour/:listingId" element={<VirtualTour />} />
+          <Route path="/all-properties" element={<AllProperties />} />
 
           {/* Protected routes */}
           <Route element={<PrivateRoute />}>
@@ -257,7 +260,9 @@ function App() {
 export default function MainApp() {
   return (
     <BrowserRouter>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
