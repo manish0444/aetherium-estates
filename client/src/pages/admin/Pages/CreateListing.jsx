@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -8,13 +8,13 @@ import {
   MapPin,
   DollarSign,
   Check,
-  Info,
   X,
 } from "lucide-react";
 import Sidebar from '../Navbar/page';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import PropTypes from 'prop-types';
 
 // Fix Leaflet default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -110,6 +110,16 @@ const BasicInformationForm = ({ formData, handleChange }) => {
       </div>
     </div>
   );
+};
+
+BasicInformationForm.propTypes = {
+  formData: PropTypes.shape({
+    name: PropTypes.string,
+    propertyType: PropTypes.string,
+    type: PropTypes.string,
+    description: PropTypes.string,
+  }).isRequired,
+  handleChange: PropTypes.func.isRequired,
 };
 
 const PropertyDetailsForm = ({ formData, handleChange }) => {
@@ -238,6 +248,20 @@ const PropertyDetailsForm = ({ formData, handleChange }) => {
       </div>
     </div>
   );
+};
+
+PropertyDetailsForm.propTypes = {
+  formData: PropTypes.shape({
+    bedrooms: PropTypes.string,
+    bathrooms: PropTypes.string,
+    totalArea: PropTypes.string,
+    builtUpArea: PropTypes.string,
+    floorNumber: PropTypes.string,
+    totalFloors: PropTypes.string,
+    furnished: PropTypes.string,
+    parking: PropTypes.string,
+  }).isRequired,
+  handleChange: PropTypes.func.isRequired,
 };
 
 const LocationAmenitiesForm = ({ formData, handleChange, setFormData }) => {
@@ -432,7 +456,19 @@ const LocationAmenitiesForm = ({ formData, handleChange, setFormData }) => {
   );
 };
 
-const PricingMediaForm = ({ formData, handleChange, handleImageSubmit, files, setFiles, uploading, imageUploadError }) => {
+LocationAmenitiesForm.propTypes = {
+  formData: PropTypes.shape({
+    address: PropTypes.string,
+    latitude: PropTypes.number,
+    longitude: PropTypes.number,
+    name: PropTypes.string,
+    amenities: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  handleChange: PropTypes.func.isRequired,
+  setFormData: PropTypes.func.isRequired,
+};
+
+const PricingMediaForm = ({ formData, handleChange, handleImageSubmit, handleVideoSubmit, handleRemoveVideo, handleRemoveImage, files, setFiles, videoFile, setVideoFile, uploading, videoUploading, imageUploadError, videoUploadError }) => {
   const currencies = [
     { value: 'NPR', label: 'Nepalese Rupee (Rs)' },
     { value: 'USD', label: 'US Dollar ($)' },
@@ -649,8 +685,77 @@ const PricingMediaForm = ({ formData, handleChange, handleImageSubmit, files, se
           </div>
         </div>
       </div>
+
+      <div className="space-y-6">
+        <h3 className="text-lg font-medium text-gray-200">
+          Property Video
+        </h3>
+        <div className="flex items-center gap-4">
+          <input
+            type="file"
+            accept="video/*"
+            onChange={(e) => setVideoFile(e.target.files[0])}
+            className="w-full px-4 py-2 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-200"
+          />
+          <button
+            type="button"
+            onClick={handleVideoSubmit}
+            disabled={!videoFile || videoUploading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            {videoUploading ? 'Uploading...' : 'Upload'}
+          </button>
+        </div>
+
+        {videoUploadError && (
+          <p className="text-red-500 text-sm">{videoUploadError}</p>
+        )}
+      </div>
     </div>
   );
+};
+
+PricingMediaForm.propTypes = {
+  formData: PropTypes.shape({
+    type: PropTypes.string,
+    description: PropTypes.string,
+    bedrooms: PropTypes.string,
+    bathrooms: PropTypes.string,
+    totalArea: PropTypes.string,
+    builtUpArea: PropTypes.string,
+    floorNumber: PropTypes.string,
+    totalFloors: PropTypes.string,
+    furnished: PropTypes.string,
+    parking: PropTypes.string,
+    address: PropTypes.string,
+    latitude: PropTypes.number,
+    longitude: PropTypes.number,
+    name: PropTypes.string,
+    amenities: PropTypes.arrayOf(PropTypes.string),
+    currency: PropTypes.string,
+    customCurrency: PropTypes.string,
+    offer: PropTypes.bool,
+    regularPrice: PropTypes.string,
+    discountPrice: PropTypes.string,
+    maintenanceFees: PropTypes.string,
+    deposit: PropTypes.string,
+    paymentFrequency: PropTypes.string,
+    imageUrls: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  handleChange: PropTypes.func.isRequired,
+  handleImageSubmit: PropTypes.func.isRequired,
+  handleVideoSubmit: PropTypes.func.isRequired,
+  handleRemoveVideo: PropTypes.func.isRequired,
+  handleRemoveImage: PropTypes.func.isRequired,
+  files: PropTypes.array.isRequired,
+  setFiles: PropTypes.func.isRequired,
+  videoFile: PropTypes.object,
+  setVideoFile: PropTypes.func.isRequired,
+  uploading: PropTypes.bool.isRequired,
+  videoUploading: PropTypes.bool.isRequired,
+  imageUploadError: PropTypes.string,
+  videoUploadError: PropTypes.string,
 };
 
 const ReviewSubmitForm = ({ formData }) => {
@@ -760,6 +865,34 @@ const ReviewSubmitForm = ({ formData }) => {
   );
 };
 
+ReviewSubmitForm.propTypes = {
+  formData: PropTypes.shape({
+    name: PropTypes.string,
+    propertyType: PropTypes.string,
+    type: PropTypes.string,
+    propertyStatus: PropTypes.string,
+    description: PropTypes.string,
+    address: PropTypes.string,
+    bedrooms: PropTypes.string,
+    bathrooms: PropTypes.string,
+    totalArea: PropTypes.string,
+    builtUpArea: PropTypes.string,
+    floorNumber: PropTypes.string,
+    totalFloors: PropTypes.string,
+    furnishing: PropTypes.string,
+    parking: PropTypes.string,
+    regularPrice: PropTypes.string,
+    offer: PropTypes.bool,
+    discountPrice: PropTypes.string,
+    maintenanceFees: PropTypes.string,
+    deposit: PropTypes.string,
+    paymentFrequency: PropTypes.string,
+    imageUrls: PropTypes.arrayOf(PropTypes.string),
+    currency: PropTypes.string,
+    customCurrency: PropTypes.string,
+  }).isRequired,
+};
+
 // Update the main component's return statement to include all form steps
 export default function AdminCreateListing() {
   const { currentUser } = useSelector((state) => state.user);
@@ -771,6 +904,9 @@ export default function AdminCreateListing() {
   const [activeStep, setActiveStep] = useState(1);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [imageUploadError, setImageUploadError] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoUploadError, setVideoUploadError] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const steps = [
     { number: 1, title: "Basic Information" },
@@ -820,6 +956,7 @@ export default function AdminCreateListing() {
     maintenanceFees: 0,
     deposit: 0,
     paymentFrequency: "monthly",
+    videoUrl: '',
   });
 
   const handleChange = (e) => {
@@ -861,7 +998,6 @@ export default function AdminCreateListing() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
       setLoading(true);
       setError(null);
@@ -875,64 +1011,47 @@ export default function AdminCreateListing() {
         return;
       }
 
-      // Final submission - only happens on the review step
-      if (activeStep === steps.length) {
-        // Validate location
-        if (!formData.latitude || !formData.longitude || !formData.address) {
-          setError("Please select a location on the map");
-          setLoading(false);
-          return;
-        }
+      // Final submission
+      if (!validateStep()) {
+        setLoading(false);
+        return;
+      }
 
-        const submissionData = {
-          ...formData,
-          userRef: currentUser._id,
-          latitude: Number(formData.latitude),
-          longitude: Number(formData.longitude),
-          regularPrice: Number(formData.regularPrice),
-          discountPrice: formData.offer ? Number(formData.discountPrice) : 0,
-          bedrooms: Number(formData.bedrooms),
-          bathrooms: Number(formData.bathrooms),
-          totalArea: Number(formData.totalArea) || 0,
-          builtUpArea: Number(formData.builtUpArea) || 0,
-          furnished: Boolean(formData.furnished),
-          parking: Boolean(formData.parking),
-          status: currentUser.role === 'manager' ? 'pending' : 'approved'
-        };
+      const listingData = {
+        ...formData,
+        userRef: currentUser._id,
+        regularPrice: Number(formData.regularPrice),
+        discountPrice: formData.offer ? Number(formData.discountPrice) : 0,
+        bedrooms: Number(formData.bedrooms) || 0,
+        bathrooms: Number(formData.bathrooms) || 0,
+        totalArea: Number(formData.totalArea) || 0,
+        builtUpArea: Number(formData.builtUpArea) || 0,
+        floorNumber: Number(formData.floorNumber) || 0,
+        totalFloors: Number(formData.totalFloors) || 0,
+        maintenanceFees: Number(formData.maintenanceFees) || 0,
+        deposit: Number(formData.deposit) || 0,
+        status: currentUser.role === 'manager' ? 'draft' : 'active',
+        videoUrl: formData.videoUrl || ''
+      };
 
-        const res = await fetch("/api/listing/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submissionData),
-        });
+      const res = await fetch("/api/listing/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(listingData),
+      });
 
-        const data = await res.json();
-        
-        if (data.success === false) {
-          setError(data.message);
-          setLoading(false);
-          return;
-        }
+      const data = await res.json();
+      setLoading(false);
 
-        // Show different messages based on role
-        if (currentUser.role === 'manager') {
-          setNotification({
-            show: true,
-            type: 'success',
-            message: 'Listing submitted for admin review'
-          });
-          setTimeout(() => {
-            navigate('/manager/dashboard');
-          }, 2000);
-        } else {
-          navigate(`/listing/${data._id}`);
-        }
+      if (data.success === false) {
+        setError(data.message);
+      } else {
+        navigate(`/listing/${data._id}`);
       }
     } catch (error) {
-      setError(error.message || "Something went wrong");
-    } finally {
+      setError(error.message);
       setLoading(false);
     }
   };
@@ -1047,6 +1166,81 @@ export default function AdminCreateListing() {
     return 'Create Listing';
   };
 
+  const handleVideoSubmit = async () => {
+    if (!videoFile) return;
+
+    // Check file size (max 50MB)
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+    if (videoFile.size > MAX_VIDEO_SIZE) {
+      setVideoUploadError("Video must be less than 50MB");
+      return;
+    }
+
+    // Check video duration
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+
+    try {
+      setVideoUploading(true);
+      setVideoUploadError(null);
+
+      // Create a promise to handle video metadata loading
+      const checkDuration = new Promise((resolve, reject) => {
+        video.onloadedmetadata = () => resolve(video.duration);
+        video.onerror = () => reject('Error loading video');
+        video.src = URL.createObjectURL(videoFile);
+      });
+
+      const duration = await checkDuration;
+      URL.revokeObjectURL(video.src);
+
+      if (duration > 60) {
+        setVideoUploadError("Video must be less than 1 minute long");
+        setVideoUploading(false);
+        return;
+      }
+
+      // Convert video to base64
+      const base64Video = await fileToBase64(videoFile);
+      
+      // Update form data with video URL
+      setFormData(prevData => ({
+        ...prevData,
+        videoUrl: base64Video
+      }));
+      
+      setVideoFile(null);
+      setVideoUploadError(null);
+    } catch (err) {
+      console.error('Video upload error:', err);
+      setVideoUploadError("Failed to process video. Please try again.");
+    } finally {
+      setVideoUploading(false);
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setFormData({
+      ...formData,
+      videoUrl: ''
+    });
+  };
+
+  const validateStep = (step, formData) => {
+    switch (step) {
+      case 1:
+        return formData.name && formData.propertyType && formData.type && formData.description;
+      case 2:
+        return formData.bedrooms && formData.bathrooms && formData.totalArea;
+      case 3:
+        return formData.address && formData.latitude && formData.longitude;
+      case 4:
+        return formData.regularPrice && (!formData.offer || (formData.offer && formData.discountPrice));
+      default:
+        return true;
+    }
+  };
+
   return (
     <div className="flex">
       <Sidebar />
@@ -1110,10 +1304,17 @@ export default function AdminCreateListing() {
                   formData={formData}
                   handleChange={handleChange}
                   handleImageSubmit={handleImageSubmit}
+                  handleVideoSubmit={handleVideoSubmit}
+                  handleRemoveVideo={handleRemoveVideo}
+                  handleRemoveImage={handleRemoveImage}
                   files={files}
                   setFiles={setFiles}
+                  videoFile={videoFile}
+                  setVideoFile={setVideoFile}
                   uploading={uploading}
+                  videoUploading={videoUploading}
                   imageUploadError={imageUploadError}
+                  videoUploadError={videoUploadError}
                 />
               )}
               {activeStep === 5 && (

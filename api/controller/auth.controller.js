@@ -12,6 +12,7 @@ import {
   sendResetSuccessEmail 
 } from "../utils/emailConfig.js";
 import passport from 'passport';
+import Session from "../models/session.model.js";
 
 export const googleCallback = (req, res, next) => {
   passport.authenticate('google', async (err, user) => {
@@ -63,40 +64,35 @@ export const signup = async (req, res, next) => {
 
     const hashedPassword = bcryptjs.hashSync(password, 10);
     const verificationToken = generateVerificationToken();
+    const verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-    // Create and save session data
-    req.session.unverifiedUser = {
-      username,
-      email,
-      password: hashedPassword,
-      verificationToken,
-      verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000,
-    };
-
-    // Force session save
-    await new Promise((resolve, reject) => {
-      req.session.save(err => {
-        if (err) {
-          console.error('Session save error:', err);
-          reject(err);
-        }
-        resolve();
-      });
+    // Create session document
+    const session = new Session({
+      _id: crypto.randomBytes(32).toString('hex'),
+      unverifiedUser: {
+        username,
+        email,
+        password: hashedPassword,
+        verificationToken,
+        verificationTokenExpiresAt
+      }
     });
+
+    await session.save();
 
     // Send verification email
     await sendVerificationEmail(email, verificationToken);
 
     // Log session data for debugging
     console.log('Session saved:', {
-      id: req.sessionID,
-      unverifiedUser: req.session.unverifiedUser
+      id: session._id,
+      unverifiedUser: session.unverifiedUser
     });
 
     res.status(200).json({
       success: true,
       message: "Verification email sent. Please check your email.",
-      sessionId: req.sessionID
+      sessionId: session._id
     });
   } catch (error) {
     console.error('Signup error:', error);
@@ -105,27 +101,32 @@ export const signup = async (req, res, next) => {
 };
 
 export const verifyEmail = async (req, res, next) => {
-  const { code, email } = req.body;
+  const { code, email, sessionId } = req.body;
 
   try {
     console.log('Verification attempt:', {
       email,
       code,
-      sessionID: req.sessionID,
-      unverifiedUser: req.session.unverifiedUser
+      sessionId,
+      currentSessionId: req.sessionID
     });
 
-    const unverifiedUser = req.session.unverifiedUser;
+    // Find session in database
+    const session = await Session.findOne({
+      _id: sessionId,
+      'unverifiedUser.email': email
+    });
 
-    if (!unverifiedUser) {
+    if (!session || !session.unverifiedUser) {
       return res.status(400).json({
         success: false,
         message: "Session expired. Please sign up again.",
       });
     }
 
-    if (unverifiedUser.email !== email || 
-        unverifiedUser.verificationToken !== code ||
+    const { unverifiedUser } = session;
+
+    if (unverifiedUser.verificationToken !== code ||
         unverifiedUser.verificationTokenExpiresAt < Date.now()) {
       return res.status(400).json({
         success: false,
@@ -149,9 +150,8 @@ export const verifyEmail = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    // Clear session
-    req.session.unverifiedUser = null;
-    await new Promise(resolve => req.session.save(resolve));
+    // Delete session
+    await Session.deleteOne({ _id: sessionId });
 
     // Send welcome email
     await sendWelcomeEmail(newUser.email, newUser.username);
@@ -278,18 +278,29 @@ export const resetPassword = async (req, res, next) => {
 };
 
 export const resendVerification = async (req, res, next) => {
-  const { email } = req.body;
+  const { email, sessionId } = req.body;
 
   try {
+    // Find existing session
+    const session = await Session.findOne({
+      _id: sessionId,
+      'unverifiedUser.email': email
+    });
+
+    if (!session || !session.unverifiedUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Session expired. Please sign up again.",
+      });
+    }
+
     // Generate new verification token
     const verificationToken = generateVerificationToken();
-
-    // Store user data in the session
-    req.session.unverifiedUser = {
-      ...req.session.unverifiedUser,
-      verificationToken,
-      verificationTokenExpiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
-    };
+    
+    // Update session with new token
+    session.unverifiedUser.verificationToken = verificationToken;
+    session.unverifiedUser.verificationTokenExpiresAt = Date.now() + 15 * 60 * 1000;
+    await session.save();
 
     // Send new verification email
     await sendVerificationEmail(email, verificationToken);
@@ -297,8 +308,10 @@ export const resendVerification = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "New verification code sent successfully",
+      sessionId: session._id
     });
   } catch (error) {
+    console.error('Resend verification error:', error);
     next(errorHandler(500, "Error sending verification email"));
   }
 };

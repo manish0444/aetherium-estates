@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Home, Eye } from 'lucide-react';
+import { MapPin, Bed, Bath, Home, Eye, Video } from 'lucide-react';
 
 export default function ListingItem({ listing }) {
   // Add a type badge only if it's a rental property
@@ -54,10 +54,17 @@ export default function ListingItem({ listing }) {
           {/* Type badge only for rentals */}
           {renderTypeBadge()}
 
-          {/* Views Counter */}
-          <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-sm flex items-center gap-1">
-            <Eye className="w-4 h-4" />
-            <span>{listing.views || 0}</span>
+          {/* Views Counter and Video Icon */}
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            <div className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-sm flex items-center gap-1">
+              <Eye className="w-4 h-4" />
+              <span>{listing.views || 0}</span>
+            </div>
+            {listing.videoUrl && (
+              <div className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg">
+                <Video className="w-4 h-4" />
+              </div>
+            )}
           </div>
         </div>
 

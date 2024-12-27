@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { User, X, Mail, Phone, Star, Crown, Badge, MapPin, Eye, Share2, Heart, Info, Bed, Bath, Maximize2, Grid, ArrowUpDown, Car, Check, DollarSign, Shield, Calendar, Wrench, Building2, Loader2, Home } from "lucide-react";
+import { User, X, Mail, Phone, Star, Crown, Badge, MapPin, Eye, Share2, Heart, Info, Bed, Bath, Maximize2, Grid, ArrowUpDown, Car, Check, DollarSign, Shield, Calendar, Wrench, Building2, Loader2, Home, Clock, Ban, Tag } from "lucide-react";
 import PropTypes from 'prop-types';
 import Contact from "../../components/Contact";
 import { useFavorites } from '../../context/FavoritesContext';
@@ -224,6 +224,30 @@ LandlordInfoModal.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
+const getStatusBadge = (status, type) => {
+  const badges = {
+    available: { bg: 'bg-green-100', text: 'text-green-700', icon: Check },
+    pending: { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: Clock },
+    booked: { bg: 'bg-blue-100', text: 'text-blue-700', icon: Tag },
+    sold: { bg: 'bg-purple-100', text: 'text-purple-700', icon: Tag },
+    rented: { bg: 'bg-indigo-100', text: 'text-indigo-700', icon: Tag },
+    leased: { bg: 'bg-teal-100', text: 'text-teal-700', icon: Tag },
+    unavailable: { bg: 'bg-red-100', text: 'text-red-700', icon: Ban },
+  };
+
+  const badge = badges[status] || badges.available;
+  const Icon = badge.icon;
+
+  return (
+    <span className={`px-3 py-1 rounded-full ${badge.bg} ${badge.text} text-sm font-medium flex items-center gap-1.5`}>
+      <Icon className="w-4 h-4" />
+      <span className="capitalize">
+        {status === 'available' ? type === 'rent' ? 'For Rent' : type === 'sale' ? 'For Sale' : 'For Lease' : status}
+      </span>
+    </span>
+  );
+};
+
 const Listings = () => {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -309,8 +333,8 @@ const Listings = () => {
       );
       const data = await response.json();
       return data.display_name;
-    } catch (error) {
-      console.error('Error getting address:', error);
+    } catch (err) {
+      console.error('Error getting address:', err);
       return '';
     }
   };
@@ -337,7 +361,7 @@ const Listings = () => {
         setListing(data);
         setLoading(false);
         setError(null);
-      } catch (error) {
+      } catch (err) {
         setError('Failed to fetch listing');
         setLoading(false);
       }
@@ -449,6 +473,32 @@ const Listings = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
               <div className="relative bg-gray-100 rounded-xl overflow-hidden">
+                {(listing.status === 'rented' || listing.status === 'unavailable') && (
+                  <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-[1px]">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-red-500/90 text-white px-6 py-3 rounded-full font-bold transform -rotate-45 text-xl shadow-lg">
+                        {listing.status === 'rented' ? 'RENTED' : 'UNAVAILABLE'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Section */}
+                {listing.videoUrl && (
+                  <div className="mb-4">
+                    <video
+                      src={listing.videoUrl}
+                      controls
+                      className="w-full rounded-xl"
+                      style={{
+                        maxHeight: "min(60vh, 500px)",
+                        minHeight: "300px",
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Image Swiper */}
                 <Swiper
                   modules={[Navigation, EffectFade]}
                   navigation
@@ -530,13 +580,7 @@ const Listings = () => {
                       : listing.regularPrice.toLocaleString()}
                     {listing.type === "rent" && " / month"}
                   </span>
-                  <span className="inline-flex items-center px-6 py-2 rounded-full font-semibold bg-blue-100 text-blue-800">
-                    For {listing.type === "rent" 
-                      ? "Rent" 
-                      : listing.type === "lease" 
-                      ? "Lease" 
-                      : "Sale"}
-                  </span>
+                  {getStatusBadge(listing.status || 'available', listing.type)}
                 </div>
 
             <div className="space-y-6">

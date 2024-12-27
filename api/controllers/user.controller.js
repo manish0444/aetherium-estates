@@ -373,4 +373,255 @@ const getMonthlyStats = async () => {
   }));
 
   return monthlyStats;
+};
+
+export const checkLikeStatus = async (req, res, next) => {
+  try {
+    const agentId = req.params.id;
+    const userId = req.user.id;
+
+    const existingLike = await Like.findOne({ user: userId, agent: agentId });
+    res.status(200).json({ isLiked: !!existingLike });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addReplyToReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const { text } = req.body;
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    const reply = {
+      user: userId,
+      text,
+      likes: [],
+      dislikes: []
+    };
+
+    review.replies.push(reply);
+    await review.save();
+
+    // Populate the user info for the new reply
+    const populatedReview = await Review.findById(reviewId)
+      .populate('replies.user', 'username photo');
+
+    const newReply = populatedReview.replies[populatedReview.replies.length - 1];
+
+    res.status(201).json({ success: true, reply: newReply });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const editReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const { comment, rating } = req.body;
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    if (review.user.toString() !== userId) {
+      return next(errorHandler(403, 'You can only edit your own reviews'));
+    }
+
+    review.comment = comment;
+    review.rating = rating;
+    review.isEdited = true;
+    review.editedAt = new Date();
+
+    await review.save();
+
+    const updatedReview = await Review.findById(reviewId)
+      .populate('user', 'username photo');
+
+    res.status(200).json({ success: true, review: updatedReview });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const editReplyToReview = async (req, res, next) => {
+  try {
+    const { reviewId, replyId } = req.params;
+    const { text } = req.body;
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    const reply = review.replies.id(replyId);
+    if (!reply) {
+      return next(errorHandler(404, 'Reply not found'));
+    }
+
+    if (reply.user.toString() !== userId) {
+      return next(errorHandler(403, 'You can only edit your own replies'));
+    }
+
+    reply.text = text;
+    reply.isEdited = true;
+    reply.editedAt = new Date();
+
+    await review.save();
+
+    const updatedReview = await Review.findById(reviewId)
+      .populate('replies.user', 'username photo');
+
+    res.status(200).json({ success: true, review: updatedReview });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    if (review.user.toString() !== userId) {
+      return next(errorHandler(403, 'You can only delete your own reviews'));
+    }
+
+    await Review.findByIdAndDelete(reviewId);
+    res.status(200).json({ success: true, message: 'Review deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteReplyToReview = async (req, res, next) => {
+  try {
+    const { reviewId, replyId } = req.params;
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    const reply = review.replies.id(replyId);
+    if (!reply) {
+      return next(errorHandler(404, 'Reply not found'));
+    }
+
+    if (reply.user.toString() !== userId) {
+      return next(errorHandler(403, 'You can only delete your own replies'));
+    }
+
+    review.replies.pull(replyId);
+    await review.save();
+
+    res.status(200).json({ success: true, message: 'Reply deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleReviewReaction = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const { reaction } = req.body; // 'like' or 'dislike'
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    const hasLiked = review.likes.includes(userId);
+    const hasDisliked = review.dislikes.includes(userId);
+
+    // Remove existing reaction if any
+    if (hasLiked) {
+      review.likes.pull(userId);
+    }
+    if (hasDisliked) {
+      review.dislikes.pull(userId);
+    }
+
+    // Add new reaction if it's different from the previous one
+    if (reaction === 'like' && !hasLiked) {
+      review.likes.push(userId);
+    } else if (reaction === 'dislike' && !hasDisliked) {
+      review.dislikes.push(userId);
+    }
+
+    await review.save();
+
+    res.status(200).json({
+      success: true,
+      likes: review.likes.length,
+      dislikes: review.dislikes.length,
+      userReaction: reaction === 'like' && !hasLiked ? 'like' : 
+                    reaction === 'dislike' && !hasDisliked ? 'dislike' : null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleReplyReaction = async (req, res, next) => {
+  try {
+    const { reviewId, replyId } = req.params;
+    const { reaction } = req.body; // 'like' or 'dislike'
+    const userId = req.user.id;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return next(errorHandler(404, 'Review not found'));
+    }
+
+    const reply = review.replies.id(replyId);
+    if (!reply) {
+      return next(errorHandler(404, 'Reply not found'));
+    }
+
+    const hasLiked = reply.likes.includes(userId);
+    const hasDisliked = reply.dislikes.includes(userId);
+
+    // Remove existing reaction if any
+    if (hasLiked) {
+      reply.likes.pull(userId);
+    }
+    if (hasDisliked) {
+      reply.dislikes.pull(userId);
+    }
+
+    // Add new reaction if it's different from the previous one
+    if (reaction === 'like' && !hasLiked) {
+      reply.likes.push(userId);
+    } else if (reaction === 'dislike' && !hasDisliked) {
+      reply.dislikes.push(userId);
+    }
+
+    await review.save();
+
+    res.status(200).json({
+      success: true,
+      likes: reply.likes.length,
+      dislikes: reply.dislikes.length,
+      userReaction: reaction === 'like' && !hasLiked ? 'like' : 
+                    reaction === 'dislike' && !hasDisliked ? 'dislike' : null
+    });
+  } catch (error) {
+    next(error);
+  }
 }; 

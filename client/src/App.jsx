@@ -101,10 +101,6 @@ function App() {
     "/manager"
   ].includes(location.pathname);
 
-  const showFooter = ["/", "/about", "/contact", "/blog", "/faq"].includes(
-    location.pathname
-  );
-
   // Check if current route is a landing page
   const isLandingPage = [
     "/about",
@@ -112,6 +108,8 @@ function App() {
     "/features",
     "/pricing"
   ].includes(location.pathname);
+
+  const showFooter = ["/", "/contact", "/blog", "/faq"].includes(location.pathname) && !isLandingPage;
 
   return (
     <>

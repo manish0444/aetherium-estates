@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Home, Tag, Eye } from 'lucide-react';
+import { MapPin, Bed, Bath, Home, Tag, Eye, Video } from 'lucide-react';
 
 const EnhancedPropertyListing = ({ listings, loading }) => {
   return (
@@ -49,10 +49,17 @@ const EnhancedPropertyListing = ({ listings, loading }) => {
                   : 'Unknown'}
               </div>
 
-              {/* Views Counter */}
-              <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-sm flex items-center gap-1">
-                <Eye className="w-4 h-4" />
-                <span>{listing.views || 0}</span>
+              {/* Views Counter and Video Icon */}
+              <div className="absolute bottom-2 right-2 flex gap-2">
+                <div className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-sm flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                  <span>{listing.views || 0}</span>
+                </div>
+                {listing.videoUrl && (
+                  <div className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg">
+                    <Video className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             </div>
 

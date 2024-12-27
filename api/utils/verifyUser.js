@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { errorHandler } from "./error.js";
 import User from "../models/user.model.js";
+import Session from "../models/session.model.js";
 
 export const verifyToken = (requiredRoles = []) => {
   return async (req, res, next) => {
@@ -34,7 +35,7 @@ export const verifyToken = (requiredRoles = []) => {
 };
 
 export const generateTokenAndSetCookie = (res, userId) => {
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 
@@ -56,4 +57,33 @@ export const verifyManager = async (req, res, next) => {
       return res.status(403).json({ message: 'You are not authorized' });
     }
   });
+};
+
+// Add session verification helper
+export const verifySession = async (sessionID, email) => {
+  try {
+    if (!sessionID || !email) {
+      throw new Error('Missing session ID or email');
+    }
+
+    // Verify session exists and matches email
+    const session = await Session.findOne({ 
+      _id: sessionID,
+      'unverifiedUser.email': email,
+      'unverifiedUser.verificationTokenExpiresAt': { $gt: Date.now() }
+    });
+
+    if (!session) {
+      throw new Error('Invalid or expired session');
+    }
+
+    if (!session.unverifiedUser) {
+      throw new Error('Invalid session data');
+    }
+
+    return session;
+  } catch (error) {
+    console.error('Session verification error:', error);
+    throw new Error(error.message || 'Session verification failed');
+  }
 };

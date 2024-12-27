@@ -42,6 +42,8 @@ export default function SignUp() {
     try {
       setLoading(true);
       setError(null);
+      console.log('Submitting signup form:', formData);
+
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
@@ -52,18 +54,32 @@ export default function SignUp() {
       });
 
       const data = await res.json();
+      console.log('Signup response:', data);
+
       if (!data.success) {
         setError(data.message);
         return;
       }
 
+      if (!data.sessionId) {
+        setError('Server error: No session ID received');
+        return;
+      }
+
+      // Store session data in localStorage for persistence
+      const sessionData = {
+        email: formData.email,
+        sessionId: data.sessionId,
+        timestamp: Date.now()
+      };
+      console.log('Storing session data:', sessionData);
+      localStorage.setItem('verificationSession', JSON.stringify(sessionData));
+
       navigate("/verify-email", {
-        state: { 
-          email: formData.email,
-          sessionId: data.sessionId
-        },
+        state: sessionData
       });
     } catch (error) {
+      console.error('Signup error:', error);
       setError("Server error. Please try again.");
     } finally {
       setLoading(false);

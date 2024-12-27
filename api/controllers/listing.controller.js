@@ -250,13 +250,95 @@ export const createListing = async (req, res, next) => {
       }
     }
 
+    // Validate image count
+    if (!req.body.imageUrls || req.body.imageUrls.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one image is required'
+      });
+    }
+
+    if (req.body.imageUrls.length > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 5 images allowed'
+      });
+    }
+
+    // Validate video if provided
+    if (req.body.videoUrl) {
+      // Video validation will be handled on the frontend
+      // Here we just ensure it's a valid base64 string
+      if (!req.body.videoUrl.startsWith('data:video/')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid video format'
+        });
+      }
+    }
+
     const listing = await Listing.create({
       ...req.body,
       userRef: req.user.id,
-      status: 'approved' // All listings are approved by default
     });
 
     res.status(201).json(listing);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateListing = async (req, res, next) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Listing not found'
+      });
+    }
+
+    if (req.user.id !== listing.userRef) {
+      return res.status(401).json({
+        success: false,
+        message: 'You can only update your own listings'
+      });
+    }
+
+    // Validate image count
+    if (req.body.imageUrls && req.body.imageUrls.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one image is required'
+      });
+    }
+
+    if (req.body.imageUrls && req.body.imageUrls.length > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 5 images allowed'
+      });
+    }
+
+    // Validate video if provided
+    if (req.body.videoUrl) {
+      // Video validation will be handled on the frontend
+      // Here we just ensure it's a valid base64 string
+      if (!req.body.videoUrl.startsWith('data:video/')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid video format'
+        });
+      }
+    }
+
+    const updatedListing = await Listing.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.status(200).json(updatedListing);
   } catch (error) {
     next(error);
   }

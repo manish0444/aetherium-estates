@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import { 
   MapPin, Mail, Phone, Calendar, 
   ListChecks, Eye, Star, Activity,
-  Building2, DollarSign, Heart, Share2, Trophy
+  Building2, DollarSign, ThumbsUp, Share2, Trophy,
+  ThumbsDown, Edit2, Trash2, MessageCircle, Check, X
 } from 'lucide-react';
 import { RoleBadge } from '../../components/RoleBadge';
 
@@ -15,7 +16,19 @@ export default function UserProfilePage() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    comment: ''
+  });
   const { currentUser } = useSelector((state) => state.user);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editingReply, setEditingReply] = useState(null);
+  const [replyForm, setReplyForm] = useState({
+    reviewId: null,
+    text: ''
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -78,6 +91,25 @@ export default function UserProfilePage() {
             console.error('Error fetching reviews:', reviewError);
             setReviews([]);
           }
+
+          // Fetch likes count and status
+          try {
+            const likesRes = await fetch(`/api/user/likes/${userId}`);
+            const likesData = await likesRes.json();
+            setLikesCount(likesData.likes);
+
+            if (currentUser) {
+              const likeStatusRes = await fetch(`/api/user/like/status/${userId}`, {
+                headers: {
+                  'Authorization': `Bearer ${currentUser.token}`
+                }
+              });
+              const likeStatusData = await likeStatusRes.json();
+              setIsLiked(likeStatusData.isLiked);
+            }
+          } catch (likeError) {
+            console.error('Error fetching likes:', likeError);
+          }
         }
 
         console.log('All data fetched successfully');
@@ -96,7 +128,57 @@ export default function UserProfilePage() {
       setLoading(false);
       setError('User ID is required');
     }
-  }, [userId]);
+  }, [userId, currentUser]);
+
+  const handleLikeToggle = async () => {
+    if (!currentUser) {
+      // Show sign-in prompt or redirect to login
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/user/like/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsLiked(data.liked);
+        setLikesCount(prev => data.liked ? prev + 1 : prev - 1);
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentUser) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/user/review/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify(reviewForm)
+      });
+
+      if (response.ok) {
+        const newReview = await response.json();
+        setReviews(prev => [newReview.review, ...prev]);
+        setReviewForm({ rating: 5, comment: '' });
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+    }
+  };
 
   // Add loading state logging
   useEffect(() => {
@@ -142,6 +224,167 @@ export default function UserProfilePage() {
       );
     }
     return null;
+  };
+
+  const handleEditReview = async (reviewId, updatedData) => {
+    try {
+      const response = await fetch(`/api/user/review/${reviewId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (response.ok) {
+        const { review } = await response.json();
+        setReviews(prev => prev.map(r => r._id === reviewId ? review : r));
+        setEditingReview(null);
+      }
+    } catch (error) {
+      console.error('Error editing review:', error);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+
+    try {
+      const response = await fetch(`/api/user/review/${reviewId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+
+      if (response.ok) {
+        setReviews(prev => prev.filter(r => r._id !== reviewId));
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+    }
+  };
+
+  const handleReplySubmit = async (reviewId) => {
+    try {
+      const response = await fetch(`/api/user/review/${reviewId}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({ text: replyForm.text })
+      });
+
+      if (response.ok) {
+        const { reply } = await response.json();
+        setReviews(prev => prev.map(r => {
+          if (r._id === reviewId) {
+            return { ...r, replies: [...r.replies, reply] };
+          }
+          return r;
+        }));
+        setReplyForm({ reviewId: null, text: '' });
+      }
+    } catch (error) {
+      console.error('Error submitting reply:', error);
+    }
+  };
+
+  const handleEditReply = async (reviewId, replyId, text) => {
+    try {
+      const response = await fetch(`/api/user/review/${reviewId}/reply/${replyId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({ text })
+      });
+
+      if (response.ok) {
+        const { review } = await response.json();
+        setReviews(prev => prev.map(r => r._id === reviewId ? review : r));
+        setEditingReply(null);
+      }
+    } catch (error) {
+      console.error('Error editing reply:', error);
+    }
+  };
+
+  const handleDeleteReply = async (reviewId, replyId) => {
+    if (!window.confirm('Are you sure you want to delete this reply?')) return;
+
+    try {
+      const response = await fetch(`/api/user/review/${reviewId}/reply/${replyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+
+      if (response.ok) {
+        setReviews(prev => prev.map(r => {
+          if (r._id === reviewId) {
+            return { ...r, replies: r.replies.filter(reply => reply._id !== replyId) };
+          }
+          return r;
+        }));
+      }
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+    }
+  };
+
+  const handleReaction = async (reviewId, replyId = null, reaction) => {
+    try {
+      const endpoint = replyId 
+        ? `/api/user/review/${reviewId}/reply/${replyId}/reaction`
+        : `/api/user/review/${reviewId}/reaction`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({ reaction })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(prev => prev.map(r => {
+          if (r._id === reviewId) {
+            if (replyId) {
+              return {
+                ...r,
+                replies: r.replies.map(reply => {
+                  if (reply._id === replyId) {
+                    return {
+                      ...reply,
+                      likes: data.likes,
+                      dislikes: data.dislikes,
+                      userReaction: data.userReaction
+                    };
+                  }
+                  return reply;
+                })
+              };
+            }
+            return {
+              ...r,
+              likes: data.likes,
+              dislikes: data.dislikes,
+              userReaction: data.userReaction
+            };
+          }
+          return r;
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling reaction:', error);
+    }
   };
 
   if (loading) {
@@ -281,14 +524,28 @@ export default function UserProfilePage() {
               </div>
               
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-red-100 rounded-lg">
-                    <Heart className="w-6 h-6 text-red-600" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <ThumbsUp className={`w-6 h-6 ${isLiked ? 'text-blue-600 fill-blue-600' : 'text-blue-600'}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Likes</p>
+                      <p className="text-2xl font-bold">{likesCount}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Likes</p>
-                    <p className="text-2xl font-bold">{userData.likesCount || 0}</p>
-                  </div>
+                  {currentUser && currentUser._id !== userId && (
+                    <button
+                      onClick={handleLikeToggle}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        isLiked 
+                          ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-blue-600' : ''}`} />
+                    </button>
+                  )}
                 </div>
               </div>
             </>
@@ -343,14 +600,66 @@ export default function UserProfilePage() {
           </div>
         )}
 
-        {/* Reviews Section for Agents */}
-        {userData.role === 'agent' && reviews.length > 0 && (
+        {/* Add Review Form */}
+        {userData?.role === 'agent' && currentUser && currentUser._id !== userId && (
+          <div className="bg-white rounded-xl shadow-md p-6 mt-8">
+            <h2 className="text-xl font-semibold mb-6">Write a Review</h2>
+            <form onSubmit={handleReviewSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-6 h-6 ${
+                          star <= reviewForm.rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Comment
+                </label>
+                <textarea
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  rows="4"
+                  placeholder="Write your review here..."
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Submit Review
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Reviews Section */}
+        {userData?.role === 'agent' && reviews.length > 0 && (
           <div className="bg-white rounded-xl shadow-md p-6 mt-8">
             <h2 className="text-xl font-semibold mb-6">Reviews</h2>
-            <div className="space-y-6">
+            <div className="space-y-8">
               {reviews.map((review) => (
                 <div key={review._id} className="border-b pb-6 last:border-0">
-                  <div className="flex items-center gap-4 mb-3">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
                     <img
                       src={review.user.photo || "/default-avatar.png"}
                       alt={review.user.username}
@@ -369,10 +678,275 @@ export default function UserProfilePage() {
                             }`}
                           />
                         ))}
+                          {review.isEdited && (
+                            <span className="text-xs text-gray-500 ml-2">
+                              (edited {new Date(review.editedAt).toLocaleDateString()})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    {currentUser && currentUser._id === review.user._id && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingReview(review)}
+                          className="p-1 hover:bg-gray-100 rounded-full"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-500" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReview(review._id)}
+                          className="p-1 hover:bg-gray-100 rounded-full"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-gray-600">{review.comment}</p>
+
+                  {editingReview?._id === review._id ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleEditReview(review._id, {
+                          rating: editingReview.rating,
+                          comment: editingReview.comment
+                        });
+                      }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Rating
+                        </label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setEditingReview(prev => ({ ...prev, rating: star }))}
+                              className="focus:outline-none"
+                            >
+                              <Star
+                                className={`w-6 h-6 ${
+                                  star <= editingReview.rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <textarea
+                        value={editingReview.comment}
+                        onChange={(e) => setEditingReview(prev => ({ ...prev, comment: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        rows="4"
+                        required
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingReview(null)}
+                          className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <p className="text-gray-600 mb-4">{review.comment}</p>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleReaction(review._id, null, 'like')}
+                            className={`p-1 rounded-full ${
+                              review.userReaction === 'like'
+                                ? 'bg-blue-100 text-blue-600'
+                                : 'hover:bg-gray-100'
+                            }`}
+                          >
+                            <ThumbsUp className={`w-4 h-4 ${
+                              review.userReaction === 'like' ? 'fill-blue-600' : ''
+                            }`} />
+                          </button>
+                          <span className="text-sm text-gray-600">{review.likes?.length || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleReaction(review._id, null, 'dislike')}
+                            className={`p-1 rounded-full ${
+                              review.userReaction === 'dislike'
+                                ? 'bg-red-100 text-red-600'
+                                : 'hover:bg-gray-100'
+                            }`}
+                          >
+                            <ThumbsDown className={`w-4 h-4 ${
+                              review.userReaction === 'dislike' ? 'fill-red-600' : ''
+                            }`} />
+                          </button>
+                          <span className="text-sm text-gray-600">{review.dislikes?.length || 0}</span>
+                        </div>
+                        {currentUser && (
+                          <button
+                            onClick={() => setReplyForm({ reviewId: review._id, text: '' })}
+                            className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            Reply
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Reply Form */}
+                  {replyForm.reviewId === review._id && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleReplySubmit(review._id);
+                      }}
+                      className="ml-12 mb-4"
+                    >
+                      <textarea
+                        value={replyForm.text}
+                        onChange={(e) => setReplyForm(prev => ({ ...prev, text: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        rows="2"
+                        placeholder="Write your reply..."
+                        required
+                      />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => setReplyForm({ reviewId: null, text: '' })}
+                          className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Replies */}
+                  {review.replies?.length > 0 && (
+                    <div className="ml-12 space-y-4">
+                      {review.replies.map((reply) => (
+                        <div key={reply._id} className="bg-gray-50 rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={reply.user.photo || "/default-avatar.png"}
+                                alt={reply.user.username}
+                                className="w-8 h-8 rounded-full"
+                              />
+                              <div>
+                                <p className="font-medium text-sm">{reply.user.username}</p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(reply.createdAt).toLocaleDateString()}
+                                  {reply.isEdited && ' (edited)'}
+                                </p>
+                              </div>
+                            </div>
+                            {currentUser && currentUser._id === reply.user._id && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setEditingReply(reply)}
+                                  className="p-1 hover:bg-gray-200 rounded-full"
+                                >
+                                  <Edit2 className="w-3 h-3 text-gray-500" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteReply(review._id, reply._id)}
+                                  className="p-1 hover:bg-gray-200 rounded-full"
+                                >
+                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {editingReply?._id === reply._id ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={editingReply.text}
+                                onChange={(e) => setEditingReply(prev => ({ ...prev, text: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                rows="2"
+                                required
+                              />
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingReply(null)}
+                                  className="p-1 hover:bg-gray-200 rounded-full"
+                                >
+                                  <X className="w-4 h-4 text-gray-500" />
+                                </button>
+                                <button
+                                  onClick={() => handleEditReply(review._id, reply._id, editingReply.text)}
+                                  className="p-1 hover:bg-gray-200 rounded-full"
+                                >
+                                  <Check className="w-4 h-4 text-green-500" />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-600 mb-2">{reply.text}</p>
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleReaction(review._id, reply._id, 'like')}
+                                    className={`p-1 rounded-full ${
+                                      reply.userReaction === 'like'
+                                        ? 'bg-blue-100 text-blue-600'
+                                        : 'hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    <ThumbsUp className={`w-3 h-3 ${
+                                      reply.userReaction === 'like' ? 'fill-blue-600' : ''
+                                    }`} />
+                                  </button>
+                                  <span className="text-xs text-gray-600">{reply.likes?.length || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleReaction(review._id, reply._id, 'dislike')}
+                                    className={`p-1 rounded-full ${
+                                      reply.userReaction === 'dislike'
+                                        ? 'bg-red-100 text-red-600'
+                                        : 'hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    <ThumbsDown className={`w-3 h-3 ${
+                                      reply.userReaction === 'dislike' ? 'fill-red-600' : ''
+                                    }`} />
+                                  </button>
+                                  <span className="text-xs text-gray-600">{reply.dislikes?.length || 0}</span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -15,6 +15,14 @@ import {
   checkRole,
   getUserStats,
   getAdminDashboardStats,
+  checkLikeStatus,
+  addReplyToReview,
+  editReview,
+  editReplyToReview,
+  deleteReview,
+  deleteReplyToReview,
+  toggleReviewReaction,
+  toggleReplyReaction,
 } from "../controllers/user.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 import User from '../models/user.model.js';
@@ -54,6 +62,7 @@ router.delete("/delete/:id", verifyToken(), deleteUser);
 router.get("/listings/count/:id", verifyToken(["user", "agent"]), getUserListingsCount);
 router.post("/review/:id", verifyToken(["user"]), addReview);
 router.post("/like/:id", verifyToken(["user"]), toggleLike);
+router.get("/like/status/:id", verifyToken(["user"]), checkLikeStatus);
 
 // Make user profile public for agents, but protected for regular users
 router.get("/:id", async (req, res, next) => {
@@ -126,5 +135,18 @@ router.get("/admin-data/:id", verifyToken(["admin"]), async (req, res, next) => 
 });
 
 router.get("/admin-dashboard", verifyToken(["admin", "manager"]), getAdminDashboardStats);
+
+// Review routes
+router.post("/review/:id", verifyToken(["user"]), addReview);
+router.get("/reviews/:id", getReviews);
+router.put("/review/:reviewId", verifyToken(["user"]), editReview);
+router.delete("/review/:reviewId", verifyToken(["user"]), deleteReview);
+router.post("/review/:reviewId/reaction", verifyToken(["user"]), toggleReviewReaction);
+
+// Reply routes
+router.post("/review/:reviewId/reply", verifyToken(["user"]), addReplyToReview);
+router.put("/review/:reviewId/reply/:replyId", verifyToken(["user"]), editReplyToReview);
+router.delete("/review/:reviewId/reply/:replyId", verifyToken(["user"]), deleteReplyToReview);
+router.post("/review/:reviewId/reply/:replyId/reaction", verifyToken(["user"]), toggleReplyReaction);
 
 export default router;

@@ -526,7 +526,22 @@ const LocationAmenitiesForm = ({ formData, handleChange }) => {
   );
 };
 
-const PricingMediaForm = ({ formData, handleChange, handleImageSubmit, files, setFiles, uploading, imageUploadError }) => {
+const PricingMediaForm = ({ 
+  formData, 
+  handleChange, 
+  handleImageSubmit, 
+  handleVideoSubmit,
+  handleRemoveVideo,
+  files, 
+  setFiles, 
+  videoFile,
+  setVideoFile,
+  uploading, 
+  videoUploading,
+  imageUploadError,
+  videoUploadError,
+  handleRemoveImage
+}) => {
   const currencies = [
     { value: 'NPR', label: 'Nepalese Rupee (Rs)' },
     { value: 'USD', label: 'US Dollar ($)' },
@@ -698,7 +713,54 @@ const PricingMediaForm = ({ formData, handleChange, handleImageSubmit, files, se
         </div>
       </div>
 
-      {/* Media Section */}
+      {/* Video Upload Section */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Property Video</h3>
+          <span className="text-sm text-gray-500">Max 1 minute</span>
+        </div>
+        
+        <div className="flex gap-4">
+          <input
+            onChange={(e) => setVideoFile(e.target.files[0])}
+            className="p-3 border border-gray-300 rounded w-full"
+            type="file"
+            accept="video/*"
+            disabled={formData.videoUrl || videoUploading}
+          />
+          <button
+            type="button"
+            disabled={!videoFile || videoUploading}
+            onClick={handleVideoSubmit}
+            className="p-3 text-green-700 border border-green-700 rounded uppercase hover:shadow-lg disabled:opacity-80"
+          >
+            {videoUploading ? "Uploading..." : "Upload"}
+          </button>
+        </div>
+        
+        {videoUploadError && (
+          <p className="text-red-700 text-sm">{videoUploadError}</p>
+        )}
+
+        {formData.videoUrl && (
+          <div className="flex justify-between p-3 border items-center">
+            <video
+              src={formData.videoUrl}
+              className="w-48 h-auto"
+              controls
+            />
+            <button
+              type="button"
+              onClick={handleRemoveVideo}
+              className="p-3 text-red-700 rounded-lg uppercase hover:opacity-75"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Image Upload Section */}
       <div className="space-y-6">
         <h3 className="text-lg font-medium text-gray-900">
           Property Images <span className="text-red-500">* At least one image required (Max 6, 200KB each)</span>
@@ -992,6 +1054,9 @@ export default function CreateListing() {
   const [userListingsCount, setUserListingsCount] = useState(0);
   const [remainingListings, setRemainingListings] = useState(MAX_USER_LISTINGS);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoUploadError, setVideoUploadError] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     // Required fields
@@ -1052,6 +1117,7 @@ export default function CreateListing() {
     furnished: false,       // Required field
     currency: 'NPR',        // Default currency
     customCurrency: '',     // For custom currency
+    videoUrl: '',           // Add videoUrl to formData
   });
 
   // Property Types Options
@@ -1146,12 +1212,6 @@ export default function CreateListing() {
       setLoading(true);
       setError(null);
 
-      // Check if user has reached limit
-      if (currentUser.role !== 'agent' && hasReachedLimit) {
-        setError('You have reached the maximum limit of listings. Please upgrade to agent to create more.');
-        return;
-      }
-
       // If it's not the final step, just move to next step
       if (activeStep < steps.length) {
         if (!validateStep()) {
@@ -1191,7 +1251,8 @@ export default function CreateListing() {
         latitude: Number(formData.latitude) || 0,
         longitude: Number(formData.longitude) || 0,
         maintenanceFees: Number(formData.maintenanceFees) || 0,
-        deposit: Number(formData.deposit) || 0
+        deposit: Number(formData.deposit) || 0,
+        videoUrl: formData.videoUrl || '' // Add video URL
       };
 
       // Check user permissions for regular users
@@ -1321,7 +1382,7 @@ export default function CreateListing() {
           imageUrls: [...formData.imageUrls, ...base64Images]
         });
         setFiles([]);
-      } catch (error) {
+      } catch {
         setImageUploadError("Image upload failed");
       } finally {
         setUploading(false);
@@ -1357,6 +1418,52 @@ export default function CreateListing() {
       'INR': 1.6,   // Example rate
     };
     return amount * rates[currency];
+  };
+
+  // Add video upload function
+  const handleVideoSubmit = async () => {
+    if (!videoFile) return;
+
+    // Check video duration
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+
+    video.onloadedmetadata = async function() {
+      window.URL.revokeObjectURL(video.src);
+      const duration = video.duration;
+
+      if (duration > 60) {
+        setVideoUploadError("Video must be less than 1 minute long");
+        return;
+      }
+
+      // Proceed with upload if duration is valid
+      setVideoUploading(true);
+      setVideoUploadError(null);
+
+      try {
+        const base64Video = await fileToBase64(videoFile);
+        setFormData({
+          ...formData,
+          videoUrl: base64Video
+        });
+        setVideoFile(null);
+      } catch (error) {
+        setVideoUploadError("Video upload failed");
+      } finally {
+        setVideoUploading(false);
+      }
+    };
+
+    video.src = URL.createObjectURL(videoFile);
+  };
+
+  // Add video removal function
+  const handleRemoveVideo = () => {
+    setFormData({
+      ...formData,
+      videoUrl: ''
+    });
   };
 
   return (
@@ -1404,10 +1511,17 @@ export default function CreateListing() {
                   formData={formData}
                   handleChange={handleChange}
                   handleImageSubmit={handleImageSubmit}
+                  handleVideoSubmit={handleVideoSubmit}
+                  handleRemoveVideo={handleRemoveVideo}
+                  handleRemoveImage={handleRemoveImage}
                   files={files}
                   setFiles={setFiles}
+                  videoFile={videoFile}
+                  setVideoFile={setVideoFile}
                   uploading={uploading}
+                  videoUploading={videoUploading}
                   imageUploadError={imageUploadError}
+                  videoUploadError={videoUploadError}
                 />
               )}
               {activeStep === 5 && (

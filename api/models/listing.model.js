@@ -49,6 +49,16 @@ const listingSchema = new mongoose.Schema(
     imageUrls: {
       type: Array,
       required: true,
+      validate: {
+        validator: function(v) {
+          return v.length <= 5;
+        },
+        message: 'Maximum 5 images allowed'
+      }
+    },
+    videoUrl: {
+      type: String,
+      default: ''
     },
     userRef: {
       type: String,
