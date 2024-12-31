@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GridBackground from '../../components/GridBackground';
 import ParallaxText from '../../components/ParallaxText';
 import { FaArrowRight, FaGithub, FaTwitter, FaLinkedin, FaPlay, FaBuildingCircleCheck, FaChartSimple, FaBuilding, FaCity, FaHouse, FaMapLocation } from 'react-icons/fa6';
@@ -166,14 +166,20 @@ export default function LandingPage() {
               animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
-                <button className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg text-lg font-semibold hover:from-sky-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-sky-500/25">
-                  Start Exploring
-                  <FaArrowRight className="inline-block ml-2" />
-                </button>
-                <button className="px-8 py-4 bg-slate-800 text-white rounded-lg text-lg font-semibold hover:bg-slate-700 transition-all duration-300 transform hover:scale-105 border border-slate-700 hover:border-sky-500/50">
-                  Learn More
-                  <FaPlay className="inline-block ml-2" />
-                </button>
+                <Link to="/" className="block">
+  <button className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg text-lg font-semibold hover:from-sky-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-sky-500/25">
+    Start Exploring
+    <FaArrowRight className="inline-block ml-2" />
+  </button>
+</Link>
+
+<Link to="/" className="block">
+  <button className="px-8 py-4 bg-slate-800 text-white rounded-lg text-lg font-semibold hover:bg-slate-700 transition-all duration-300 transform hover:scale-105 border border-slate-700 hover:border-sky-500/50">
+    Learn More
+    <FaPlay className="inline-block ml-2" />
+  </button>
+</Link>
+
               </motion.div>
 
               <motion.div
