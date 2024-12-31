@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import ChatBox from './ChatBox';
 import { useTheme } from '../context/ThemeContext';
+import { cacheService } from '../services/cacheService';
 
 export default function ListingsMap() {
   const [listings, setListings] = useState([]);
@@ -16,8 +17,20 @@ export default function ListingsMap() {
   useEffect(() => {
     const fetchListings = async () => {
       try {
+        // Check cache first
+        const cachedListings = cacheService.getCache('listings');
+        if (cachedListings) {
+          setListings(cachedListings);
+          setLoading(false);
+          return;
+        }
+
+        // If no cache, fetch from API
         const res = await fetch('/api/listing/get');
         const data = await res.json();
+        
+        // Store in cache
+        cacheService.setCache('listings', data);
         setListings(data);
       } catch (error) {
         console.error('Error fetching listings:', error);
@@ -30,10 +43,12 @@ export default function ListingsMap() {
   }, []);
 
   const customIcon = new Icon({
-    iconUrl: '/house-icon.png',
-    iconSize: [38, 38],
-    iconAnchor: [19, 38],
-    popupAnchor: [0, -38]
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
   });
 
   if (loading) {
@@ -75,7 +90,7 @@ export default function ListingsMap() {
           >
             <TileLayer
               url={isDarkMode 
-                ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               }
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
